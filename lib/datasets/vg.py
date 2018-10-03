@@ -41,39 +41,39 @@ class vg(imdb):
         self._class_to_ind = {}
         self._class_to_ind[self._classes[0]] = 0
         with open(os.path.join(self._data_path, self._version, 'objects_vocab.txt')) as f:
-          count = 1
-          for object in f.readlines():
-            names = [n.lower().strip() for n in object.split(',')]
-            self._classes.append(names[0])
-            for n in names:
-              self._class_to_ind[n] = count
-            count += 1
+            count = 1
+            for object in f.readlines():
+                names = [n.lower().strip() for n in object.split(',')]
+                self._classes.append(names[0])
+                for n in names:
+                    self._class_to_ind[n] = count
+                count += 1
 
         # Load attributes
         self._attributes = ['__no_attribute__']
         self._attribute_to_ind = {}
         self._attribute_to_ind[self._attributes[0]] = 0
         with open(os.path.join(self._data_path, self._version, 'attributes_vocab.txt')) as f:
-          count = 1
-          for att in f.readlines():
-            names = [n.lower().strip() for n in att.split(',')]
-            self._attributes.append(names[0])
-            for n in names:
-              self._attribute_to_ind[n] = count
-            count += 1
+            count = 1
+            for att in f.readlines():
+                names = [n.lower().strip() for n in att.split(',')]
+                self._attributes.append(names[0])
+                for n in names:
+                    self._attribute_to_ind[n] = count
+                count += 1
 
         # Load relations
         self._relations = ['__no_relation__']
         self._relation_to_ind = {}
         self._relation_to_ind[self._relations[0]] = 0
         with open(os.path.join(self._data_path, self._version, 'relations_vocab.txt')) as f:
-          count = 1
-          for rel in f.readlines():
-            names = [n.lower().strip() for n in rel.split(',')]
-            self._relations.append(names[0])
-            for n in names:
-              self._relation_to_ind[n] = count
-            count += 1
+            count = 1
+            for rel in f.readlines():
+                names = [n.lower().strip() for n in rel.split(',')]
+                self._relations.append(names[0])
+                for n in names:
+                    self._relation_to_ind[n] = count
+                count += 1
 
 
         self._image_ext = '.jpg'
@@ -125,15 +125,15 @@ class vg(imdb):
 
     def _image_split_path(self):
         if self._image_set == "minitrain":
-          return os.path.join(self._data_path, 'train.txt')
+            return os.path.join(self._data_path, 'train.txt')
         if self._image_set == "smalltrain":
-          return os.path.join(self._data_path, 'train.txt')
+            return os.path.join(self._data_path, 'train.txt')
         if self._image_set == "minival":
-          return os.path.join(self._data_path, 'val.txt')
+            return os.path.join(self._data_path, 'val.txt')
         if self._image_set == "smallval":
-          return os.path.join(self._data_path, 'val.txt')
+            return os.path.join(self._data_path, 'val.txt')
         else:
-          return os.path.join(self._data_path, self._image_set+'.txt')
+            return os.path.join(self._data_path, self._image_set+'.txt')
 
     def _load_image_set_index(self):
         """
@@ -143,34 +143,34 @@ class vg(imdb):
         assert os.path.exists(training_split_file), \
                 'Path does not exist: {}'.format(training_split_file)
         with open(training_split_file) as f:
-          metadata = f.readlines()
-          if self._image_set == "minitrain":
-            metadata = metadata[:1000]
-          elif self._image_set == "smalltrain":
-            metadata = metadata[:20000]
-          elif self._image_set == "minival":
-            metadata = metadata[:100]
-          elif self._image_set == "smallval":
-            metadata = metadata[:2000]
+            metadata = f.readlines()
+            if self._image_set == "minitrain":
+                metadata = metadata[:1000]
+            elif self._image_set == "smalltrain":
+                metadata = metadata[:20000]
+            elif self._image_set == "minival":
+                metadata = metadata[:100]
+            elif self._image_set == "smallval":
+                metadata = metadata[:2000]
 
         image_index = []
         id_to_dir = {}
         for line in metadata:
-          im_file,ann_file = line.split()
-          image_id = int(ann_file.split('/')[-1].split('.')[0])
-          filename = self._annotation_path(image_id)
-          if os.path.exists(filename):
-              # Some images have no bboxes after object filtering, so there
-              # is no xml annotation for these.
-              tree = ET.parse(filename)
-              for obj in tree.findall('object'):
-                  obj_name = obj.find('name').text.lower().strip()
-                  if obj_name in self._class_to_ind:
-                      # We have to actually load and check these to make sure they have
-                      # at least one object actually in vocab
-                      image_index.append(image_id)
-                      id_to_dir[image_id] = im_file.split('/')[0]
-                      break
+            im_file,ann_file = line.split()
+            image_id = int(ann_file.split('/')[-1].split('.')[0])
+            filename = self._annotation_path(image_id)
+            if os.path.exists(filename):
+                    # Some images have no bboxes after object filtering, so there
+                    # is no xml annotation for these.
+                tree = ET.parse(filename)
+                for obj in tree.findall('object'):
+                    obj_name = obj.find('name').text.lower().strip()
+                    if obj_name in self._class_to_ind:
+                        # We have to actually load and check these to make sure they have
+                        # at least one object actually in vocab
+                        image_index.append(image_id)
+                        id_to_dir[image_id] = im_file.split('/')[0]
+                        break
         return image_index, id_to_dir
 
     def gt_roidb(self):
@@ -196,7 +196,7 @@ class vg(imdb):
         return gt_roidb
 
     def _get_size(self, index):
-      return PIL.Image.open(self.image_path_from_index(index)).size
+        return PIL.Image.open(self.image_path_from_index(index)).size
 
     def _annotation_path(self, index):
         return os.path.join(self._data_path, 'xml', str(index) + '.xml')

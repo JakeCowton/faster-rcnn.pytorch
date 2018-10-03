@@ -70,7 +70,7 @@ def save_checkpoint(state, filename):
     torch.save(state, filename)
 
 def _smooth_l1_loss(bbox_pred, bbox_targets, bbox_inside_weights, bbox_outside_weights, sigma=1.0, dim=[1]):
-    
+
     sigma_2 = sigma ** 2
     box_diff = bbox_pred - bbox_targets
     in_box_diff = bbox_inside_weights * box_diff
@@ -81,12 +81,12 @@ def _smooth_l1_loss(bbox_pred, bbox_targets, bbox_inside_weights, bbox_outside_w
     out_loss_box = bbox_outside_weights * in_loss_box
     loss_box = out_loss_box
     for i in sorted(dim, reverse=True):
-      loss_box = loss_box.sum(i)
+        loss_box = loss_box.sum(i)
     loss_box = loss_box.mean()
     return loss_box
 
 def _crop_pool_layer(bottom, rois, max_pool=True):
-    # code modified from 
+    # code modified from
     # https://github.com/ruotianluo/pytorch-faster-rcnn
     # implement it using stn
     # box to affine
@@ -125,18 +125,18 @@ def _crop_pool_layer(bottom, rois, max_pool=True):
       (y1 + y2 - height + 1) / (height - 1)], 1).view(-1, 2, 3)
 
     if max_pool:
-      pre_pool_size = cfg.POOLING_SIZE * 2
-      grid = F.affine_grid(theta, torch.Size((rois.size(0), 1, pre_pool_size, pre_pool_size)))
-      bottom = bottom.view(1, batch_size, D, H, W).contiguous().expand(roi_per_batch, batch_size, D, H, W)\
-                                                                .contiguous().view(-1, D, H, W)
-      crops = F.grid_sample(bottom, grid)
-      crops = F.max_pool2d(crops, 2, 2)
+        pre_pool_size = cfg.POOLING_SIZE * 2
+        grid = F.affine_grid(theta, torch.Size((rois.size(0), 1, pre_pool_size, pre_pool_size)))
+        bottom = bottom.view(1, batch_size, D, H, W).contiguous().expand(roi_per_batch, batch_size, D, H, W)\
+                                                                  .contiguous().view(-1, D, H, W)
+        crops = F.grid_sample(bottom, grid)
+        crops = F.max_pool2d(crops, 2, 2)
     else:
-      grid = F.affine_grid(theta, torch.Size((rois.size(0), 1, cfg.POOLING_SIZE, cfg.POOLING_SIZE)))
-      bottom = bottom.view(1, batch_size, D, H, W).contiguous().expand(roi_per_batch, batch_size, D, H, W)\
-                                                                .contiguous().view(-1, D, H, W)
-      crops = F.grid_sample(bottom, grid)
-    
+        grid = F.affine_grid(theta, torch.Size((rois.size(0), 1, cfg.POOLING_SIZE, cfg.POOLING_SIZE)))
+        bottom = bottom.view(1, batch_size, D, H, W).contiguous().expand(roi_per_batch, batch_size, D, H, W)\
+                                                                  .contiguous().view(-1, D, H, W)
+        crops = F.grid_sample(bottom, grid)
+
     return crops, grid
 
 def _affine_grid_gen(rois, input_size, grid_size):
@@ -202,11 +202,11 @@ def compare_grid_sample():
     W = 4 # random.randint(1, 8)
     input = Variable(torch.randn(N, C, H, W).cuda(), requires_grad=True)
     input_p = input.clone().data.contiguous()
-   
+
     grid = Variable(torch.randn(N, H, W, 2).cuda(), requires_grad=True)
     grid_clone = grid.clone().contiguous()
 
-    out_offcial = F.grid_sample(input, grid)    
+    out_offcial = F.grid_sample(input, grid)
     grad_outputs = Variable(torch.rand(out_offcial.size()).cuda())
     grad_outputs_clone = grad_outputs.clone().contiguous()
     grad_inputs = torch.autograd.grad(out_offcial, (input, grid), grad_outputs.contiguous())

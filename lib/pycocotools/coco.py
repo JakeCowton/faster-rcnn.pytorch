@@ -63,7 +63,7 @@ try:
     unicode        # Python 2
 except NameError:
     unicode = str  # Python 3
-    
+
 class COCO:
     def __init__(self, annotation_file=None):
         """

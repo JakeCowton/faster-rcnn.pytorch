@@ -33,7 +33,7 @@ def find_in_path(name, path):
 #     Starts by looking for the CUDAHOME env variable. If not found, everything
 #     is based on finding 'nvcc' in the PATH.
 #     """
-# 
+#
 #     # first check if the CUDAHOME env variable is in use
 #     if 'CUDAHOME' in os.environ:
 #         home = os.environ['CUDAHOME']
