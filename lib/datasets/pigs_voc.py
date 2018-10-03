@@ -8,34 +8,43 @@ import xml.etree.ElementTree as ET
 import pickle
 
 import numpy as np
+import scipy
 
 from .imdb import imdb
 
 
 class pigs_voc(imdb):
 
-    def __init__(self, root):
-        self.name = "pigs_voc"
+    def __init__(self):
+        imdb.__init__(self, "pigs_voc")
         self._classes = ('__background__',
-                         '__pig__')
-        self._class_to_ind = dict(zip(self.clases, range(self.num_classes)))
+                         'pig')
+        self._class_to_ind = dict(zip(self.classes, range(self.num_classes)))
 
         self._img_root = "/home/jake/pig_voc"
-        self.cache_file = path.join(self._img_root, "cach")
+        self.cache_file = path.join(self._img_root, "cache")
         self._img_jpg_folder = "jpg_images"
         self._img_annotation_folder = "annotations"
         self._annotation_ext = ".xml"
         self._img_ext = ".jpg"
-
         self._image_filepaths = self._load_image_filepaths()
 
+        self._image_index = self._load_image_set_index()
+
         self._roidb_handler = self.gt_roidb
+
+        self.config = {'cleanup': True,
+                       'use_salt': True,
+                       'use_diff': False,
+                       'matlab_eval': False,
+                       'rpn_file': None,
+                       'min_size': 2}
 
     def image_path_at(self, i):
         """
         Return the absolute path to image i in the image sequence.
         """
-        return self._load_image_filepaths[i]
+        return self._image_filepaths[i]
 
     def image_id_at(self, i):
         """
@@ -54,7 +63,7 @@ class pigs_voc(imdb):
         Only return images that have corresponding XML files
         """
         filepaths = [path.join(self._img_root,
-                               self._img_jpg_folder_name,
+                               self._img_jpg_folder,
                                fn.replace(self._annotation_ext,
                                           self._img_ext))\
                      for fn in sorted(listdir(path.join(self._img_root,
@@ -67,8 +76,8 @@ class pigs_voc(imdb):
 
         This function loads/saves from/to a cache file to speed up future calls.
         """
-        cache_file = os.path.join(self.cache_file, self.name + '_gt_roidb.pkl')
-        if os.path.exists(cache_file):
+        cache_file = path.join(self.cache_file, self.name + '_gt_roidb.pkl')
+        if path.exists(cache_file):
             with open(cache_file, 'rb') as fid:
                 roidb = pickle.load(fid)
             logging.info(f"{self.name} gt roidb loaded from {cache_file}")
@@ -85,7 +94,7 @@ class pigs_voc(imdb):
     def _load_annotation(self, img_filename):
         filename = img_filename.replace(self._img_ext, self._annotation_ext)
 
-        tree = ET.parse(filename)
+        tree = ET.parse(path.join(self._img_root, self._img_annotation_folder, filename))
         objs = tree.findall('object')
         num_objs = len(objs)
 
@@ -124,3 +133,9 @@ class pigs_voc(imdb):
                 'flipped': False,
                 'seg_areas': seg_areas}
 
+    def _load_image_set_index(self):
+        """
+        Load the indexes listed in this dataset's image set file.
+        """
+        return range(len(listdir(path.join(self._img_root,
+                                           self._img_annotation_folder))))
