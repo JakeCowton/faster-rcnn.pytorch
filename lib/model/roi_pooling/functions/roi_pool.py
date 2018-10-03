@@ -10,8 +10,8 @@ class RoIPoolFunction(Function):
         ctx.spatial_scale = spatial_scale
         ctx.feature_size = None
 
-    def forward(ctx, features, rois): 
-        ctx.feature_size = features.size()           
+    def forward(ctx, features, rois):
+        ctx.feature_size = features.size()
         batch_size, num_channels, data_height, data_width = ctx.feature_size
         num_rois = rois.size(0)
         output = features.new(num_rois, num_channels, ctx.pooled_height, ctx.pooled_width).zero_()

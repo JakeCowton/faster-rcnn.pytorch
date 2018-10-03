@@ -18,7 +18,7 @@ class _RPN(nn.Module):
     """ region proposal network """
     def __init__(self, din):
         super(_RPN, self).__init__()
-        
+
         self.din = din  # get depth of input feature map, e.g., 512
         self.anchor_scales = cfg.ANCHOR_SCALES
         self.anchor_ratios = cfg.ANCHOR_RATIOS

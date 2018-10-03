@@ -18,7 +18,7 @@ def vg_eval( detpath,
              use_07_metric=False,
              eval_attributes=False):
     """rec, prec, ap, sorted_scores, npos = voc_eval(
-                                detpath, 
+                                detpath,
                                 gt_roidb,
                                 image_index,
                                 classindex,
@@ -45,7 +45,7 @@ def vg_eval( detpath,
             bbox = item['boxes'][np.where(item['gt_classes'] == classindex)[0], :]
         difficult = np.zeros((bbox.shape[0],)).astype(np.bool)
         det = [False] * bbox.shape[0]
-        npos = npos + sum(~difficult)        
+        npos = npos + sum(~difficult)
         class_recs[str(imagename)] = {'bbox': bbox,
                                  'difficult': difficult,
                                  'det': det}
@@ -119,5 +119,5 @@ def vg_eval( detpath,
     # ground truth
     prec = tp / np.maximum(tp + fp, np.finfo(np.float64).eps)
     ap = voc_ap(rec, prec, use_07_metric)
-    
+
     return rec, prec, ap, sorted_scores, npos
