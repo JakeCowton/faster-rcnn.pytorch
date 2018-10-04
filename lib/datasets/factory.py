@@ -11,6 +11,7 @@ from __future__ import division
 from __future__ import print_function
 
 __sets = {}
+from datasets.pigs_voc import pigs_voc
 from datasets.pascal_voc import pascal_voc
 from datasets.coco import coco
 from datasets.imagenet import imagenet
@@ -58,6 +59,9 @@ for split in ['train', 'val', 'val1', 'val2', 'test']:
     devkit_path = 'data/imagenet/ILSVRC/devkit'
     data_path = 'data/imagenet/ILSVRC'
     __sets[name] = (lambda split=split, devkit_path=devkit_path, data_path=data_path: imagenet(split,devkit_path,data_path))
+
+# set up pigs VOC
+__sets["pigs_voc_train"] = (lambda : pigs_voc())
 
 def get_imdb(name):
     """Get an imdb (image database) by name."""
