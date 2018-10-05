@@ -382,14 +382,16 @@ if __name__ == '__main__':
                     fg_cnt = torch.sum(rois_label.data.ne(0))
                     bg_cnt = rois_label.data.numel() - fg_cnt
 
-                print("[session %d][epoch %2d][iter %4d/%4d] loss: %.4f, "+\
-                      "lr: %.2e" % (args.session, epoch, step, iters_per_epoch,
-                                    loss_temp, lr))
-                print("\t\t\tfg/bg=(%d/%d), time cost: %f" % (fg_cnt, bg_cnt,
-                                                              end-start))
-                print("\t\t\trpn_cls: %.4f, rpn_box: %.4f, rcnn_cls: %.4f, "+\
-                      "rcnn_box %.4f" % (loss_rpn_cls, loss_rpn_box,
-                                         loss_rcnn_cls, loss_rcnn_box))
+                print(f"[session {args.session}] "+\
+                      f"[epoch {epoch}][iter {step}/{iters_per_epoch}] "+\
+                      f"loss: {loss_temp}, lr: {lr}")
+                print(f"\t\t\t\tfg/bg=({int(fg_cnt)}/{int(bg_cnt)}), "+\
+                      f"time cost: {end-start}")
+                print(f"\t\t\t\trpn_cls: {round(loss_rpn_cls, 3)}, "+\
+                      f"rpn_box: {round(loss_rpn_box, 3)}, "+\
+                      f"rcnn_cls: {round(loss_rcnn_cls, 3)}, "+\
+                      f"rcnn_box: {round(loss_rcnn_box, 3)}")
+
                 if args.use_tfboard:
                     info = {
                       'loss': loss_temp,
