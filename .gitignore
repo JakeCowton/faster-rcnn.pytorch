@@ -204,3 +204,4 @@ lib/pycocotools/_mask.c
 
 models
 images
+output
