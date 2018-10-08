@@ -101,7 +101,7 @@ def parse_args():
     # resume trained model
     parser.add_argument('--r', dest='resume',
                         help='resume checkpoint or not',
-                        default=False, type=bool)
+                        default=False, action="store_true")
     parser.add_argument('--checksession', dest='checksession',
                         help='checksession to load model',
                         default=1, type=int)
@@ -118,7 +118,7 @@ def parse_args():
     # transfer learning
     parser.add_argument('--transfer', dest='transfer',
                         help="turn on the transfer learning",
-                        default=False, type=bool)
+                        default=False, action="store_true")
     parser.add_argument("--resume_classes", dest="resume_classes",
                         help="Resume classes", default=None,
                         type=int)
