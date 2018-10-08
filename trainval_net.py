@@ -170,7 +170,9 @@ if __name__ == '__main__':
 
     if args.transfer:
         assert args.resume == True,\
-               print("Resume must be true is transfer is true")
+               "Resume must be true when transfer learning"
+        assert args.resume_classes is not None,\
+               "resume_classes must have a value when transfer learning"
 
     if args.dataset == "pascal_voc":
         args.imdb_name = "voc_2007_trainval"
@@ -273,12 +275,16 @@ if __name__ == '__main__':
     if args.cuda:
         cfg.CUDA = True
 
-    # initilize the network here.
+    # If we are resuming a network and doing transfer learning
+    # then we want the network needs to be initialised with the
+    # resuming datasets number of classes rather than the new
+    # dataset that was loaded in to imdb
     if args.resume and args.transfer:
         n_classes = list(range(args.resume_classes))
     else:
         n_classes = imdb.classes
 
+    # initilize the network here.
     if args.net == 'vgg16':
         fasterRCNN = vgg16(n_classes, pretrained=True,
                            class_agnostic=args.class_agnostic)
@@ -339,6 +345,8 @@ if __name__ == '__main__':
             cfg.POOLING_MODE = checkpoint['pooling_mode']
         print("loaded checkpoint %s" % (load_name))
 
+    # Reconfigure the FC layer to the new datasets number of classes
+    # 2048 is the output from the previous layer
     if args.transfer:
         fasterRCNN.RCNN_cls_score = nn.Linear(2048, imdb.num_classes)
         if args.cuda:
