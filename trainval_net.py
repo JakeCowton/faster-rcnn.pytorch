@@ -111,6 +111,18 @@ def parse_args():
     parser.add_argument('--checkpoint', dest='checkpoint',
                         help='checkpoint to load model',
                         default=0, type=int)
+    parser.add_argument('--resume_dataset', dest="resume_dataset",
+                        help="The dataset the resuming model was trained on",
+                        type=str)
+
+    # transfer learning
+    parser.add_argument('--transfer', dest='transfer',
+                        help="turn on the transfer learning",
+                        default=False, type=bool)
+    parser.add_argument("--resume_classes", dest="resume_classes",
+                        help="Resume classes", default=None,
+                        type=int)
+
     # log and diaplay
     parser.add_argument('--use_tfb', dest='use_tfboard',
                         help='whether use tensorboard',
@@ -155,6 +167,10 @@ if __name__ == '__main__':
 
     print('Called with args:')
     print(args)
+
+    if args.transfer:
+        assert args.resume == True,\
+               print("Resume must be true is transfer is true")
 
     if args.dataset == "pascal_voc":
         args.imdb_name = "voc_2007_trainval"
@@ -258,17 +274,22 @@ if __name__ == '__main__':
         cfg.CUDA = True
 
     # initilize the network here.
+    if args.resume and args.transfer:
+        n_classes = list(range(args.resume_classes))
+    else:
+        n_classes = imdb.classes
+
     if args.net == 'vgg16':
-        fasterRCNN = vgg16(imdb.classes, pretrained=True,
+        fasterRCNN = vgg16(n_classes, pretrained=True,
                            class_agnostic=args.class_agnostic)
     elif args.net == 'res101':
-        fasterRCNN = resnet(imdb.classes, 101, pretrained=True,
+        fasterRCNN = resnet(n_classes, 101, pretrained=True,
                             class_agnostic=args.class_agnostic)
     elif args.net == 'res50':
-        fasterRCNN = resnet(imdb.classes, 50, pretrained=True,
+        fasterRCNN = resnet(n_classes, 50, pretrained=True,
                             class_agnostic=args.class_agnostic)
     elif args.net == 'res152':
-        fasterRCNN = resnet(imdb.classes, 152, pretrained=True,
+        fasterRCNN = resnet(n_classes, 152, pretrained=True,
                             class_agnostic=args.class_agnostic)
     else:
         print("network is not defined")
@@ -304,7 +325,7 @@ if __name__ == '__main__':
         fasterRCNN.cuda()
 
     if args.resume:
-        load_name = os.path.join(output_dir,
+        load_name = os.path.join(args.save_dir, args.net, args.resume_dataset,
           'faster_rcnn_{}_{}_{}.pth'.format(args.checksession, args.checkepoch,
                                             args.checkpoint))
         print("loading checkpoint %s" % (load_name))
@@ -317,6 +338,11 @@ if __name__ == '__main__':
         if 'pooling_mode' in checkpoint.keys():
             cfg.POOLING_MODE = checkpoint['pooling_mode']
         print("loaded checkpoint %s" % (load_name))
+
+    if args.transfer:
+        fasterRCNN.RCNN_cls_score = nn.Linear(2048, imdb.num_classes)
+        if args.cuda:
+            fasterRCNN.cuda()
 
     if args.mGPUs:
         fasterRCNN = nn.DataParallel(fasterRCNN)
