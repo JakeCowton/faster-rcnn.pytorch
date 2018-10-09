@@ -58,7 +58,7 @@ class Trainer(object):
         else:
             self.args = args
 
-    def run(self):
+    def train(self):
         if self.args.transfer:
             assert self.args.resume == True,\
                    "Resume must be true when transfer learning"
@@ -461,4 +461,4 @@ if __name__ == '__main__':
     logging.info(cli_args)
 
     trainer = Trainer(cli_args, cli=True)
-    trainer.run()
+    trainer.train()

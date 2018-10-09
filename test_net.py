@@ -60,7 +60,7 @@ class Tester(object):
         else:
             self.args = args
 
-    def run(self):
+    def test(self):
         if torch.cuda.is_available() and not self.args.cuda:
             logging.warning("You have a CUDA device, so you should probably run with --cuda")
 
@@ -346,4 +346,5 @@ if __name__ == '__main__':
     logging.info('Called with args:')
     logging.info(args)
 
-    Tester(args, cli=True)
+    tester = Tester(args, cli=True)
+    tester.test()
