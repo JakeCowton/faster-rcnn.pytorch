@@ -20,6 +20,7 @@ import uuid
 import scipy.io as sio
 import xml.etree.ElementTree as ET
 import pickle
+import logging
 from .imdb import imdb
 from .imdb import ROOT_DIR
 from . import ds_utils
@@ -125,14 +126,14 @@ class pascal_voc(imdb):
         if os.path.exists(cache_file):
             with open(cache_file, 'rb') as fid:
                 roidb = pickle.load(fid)
-            print('{} gt roidb loaded from {}'.format(self.name, cache_file))
+            logging.debug('{} gt roidb loaded from {}'.format(self.name, cache_file))
             return roidb
 
         gt_roidb = [self._load_pascal_annotation(index)
                     for index in self.image_index]
         with open(cache_file, 'wb') as fid:
             pickle.dump(gt_roidb, fid, pickle.HIGHEST_PROTOCOL)
-        print('wrote gt roidb to {}'.format(cache_file))
+        logging.debug('wrote gt roidb to {}'.format(cache_file))
 
         return gt_roidb
 
@@ -149,7 +150,7 @@ class pascal_voc(imdb):
         if os.path.exists(cache_file):
             with open(cache_file, 'rb') as fid:
                 roidb = pickle.load(fid)
-            print('{} ss roidb loaded from {}'.format(self.name, cache_file))
+            logging.debug('{} ss roidb loaded from {}'.format(self.name, cache_file))
             return roidb
 
         if int(self._year) == 2007 or self._image_set != 'test':
@@ -160,7 +161,7 @@ class pascal_voc(imdb):
             roidb = self._load_selective_search_roidb(None)
         with open(cache_file, 'wb') as fid:
             pickle.dump(roidb, fid, pickle.HIGHEST_PROTOCOL)
-        print('wrote ss roidb to {}'.format(cache_file))
+        logging.debug('wrote ss roidb to {}'.format(cache_file))
 
         return roidb
 
@@ -176,7 +177,7 @@ class pascal_voc(imdb):
 
     def _load_rpn_roidb(self, gt_roidb):
         filename = self.config['rpn_file']
-        print('loading {}'.format(filename))
+        logging.debug('loading {}'.format(filename))
         assert os.path.exists(filename), \
             'rpn data not found at: {}'.format(filename)
         with open(filename, 'rb') as f:
@@ -273,7 +274,7 @@ class pascal_voc(imdb):
         for cls_ind, cls in enumerate(self.classes):
             if cls == '__background__':
                 continue
-            print('Writing {} VOC results file'.format(cls))
+            logging.info('Writing {} VOC results file'.format(cls))
             filename = self._get_voc_results_file_template().format(cls)
             with open(filename, 'wt') as f:
                 for im_ind, index in enumerate(self.image_index):
@@ -303,7 +304,7 @@ class pascal_voc(imdb):
         aps = []
         # The PASCAL VOC metric changed in 2010
         use_07_metric = True if int(self._year) < 2010 else False
-        print('VOC07 metric? ' + ('Yes' if use_07_metric else 'No'))
+        logging.info('VOC07 metric? ' + ('Yes' if use_07_metric else 'No'))
         if not os.path.isdir(output_dir):
             os.mkdir(output_dir)
         for i, cls in enumerate(self._classes):
@@ -314,28 +315,28 @@ class pascal_voc(imdb):
                 filename, annopath, imagesetfile, cls, cachedir, ovthresh=0.5,
                 use_07_metric=use_07_metric)
             aps += [ap]
-            print('AP for {} = {:.4f}'.format(cls, ap))
+            logging.info('AP for {} = {:.4f}'.format(cls, ap))
             with open(os.path.join(output_dir, cls + '_pr.pkl'), 'wb') as f:
                 pickle.dump({'rec': rec, 'prec': prec, 'ap': ap}, f)
-        print('Mean AP = {:.4f}'.format(np.mean(aps)))
-        print('~~~~~~~~')
-        print('Results:')
+        logging.info('Mean AP = {:.4f}'.format(np.mean(aps)))
+        logging.info('~~~~~~~~')
+        logging.info('Results:')
         for ap in aps:
-            print('{:.3f}'.format(ap))
-        print('{:.3f}'.format(np.mean(aps)))
-        print('~~~~~~~~')
-        print('')
-        print('--------------------------------------------------------------')
-        print('Results computed with the **unofficial** Python eval code.')
-        print('Results should be very close to the official MATLAB eval code.')
-        print('Recompute with `./tools/reval.py --matlab ...` for your paper.')
-        print('-- Thanks, The Management')
-        print('--------------------------------------------------------------')
+            logging.info('{:.3f}'.format(ap))
+        logging.info('{:.3f}'.format(np.mean(aps)))
+        logging.info('~~~~~~~~')
+        logging.info('')
+        logging.info('--------------------------------------------------------------')
+        logging.info('Results computed with the **unofficial** Python eval code.')
+        logging.info('Results should be very close to the official MATLAB eval code.')
+        logging.info('Recompute with `./tools/reval.py --matlab ...` for your paper.')
+        logging.info('-- Thanks, The Management')
+        logging.info('--------------------------------------------------------------')
 
     def _do_matlab_eval(self, output_dir='output'):
-        print('-----------------------------------------------------')
-        print('Computing results with the official MATLAB eval code.')
-        print('-----------------------------------------------------')
+        logging.info('-----------------------------------------------------')
+        logging.info('Computing results with the official MATLAB eval code.')
+        logging.info('-----------------------------------------------------')
         path = os.path.join(cfg.ROOT_DIR, 'lib', 'datasets',
                             'VOCdevkit-matlab-wrapper')
         cmd = 'cd {} && '.format(path)
@@ -344,7 +345,7 @@ class pascal_voc(imdb):
         cmd += 'voc_eval(\'{:s}\',\'{:s}\',\'{:s}\',\'{:s}\'); quit;"' \
             .format(self._devkit_path, self._get_comp_id(),
                     self._image_set, output_dir)
-        print('Running:\n{}'.format(cmd))
+        logging.info('Running:\n{}'.format(cmd))
         status = subprocess.call(cmd, shell=True)
 
     def evaluate_detections(self, all_boxes, output_dir):

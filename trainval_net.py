@@ -15,6 +15,7 @@ import argparse
 import pprint
 import pdb
 import time
+import logging
 
 import torch
 from torch.autograd import Variable
@@ -107,13 +108,13 @@ class Trainer(object):
         if self.args.set_cfgs is not None:
             cfg_from_list(self.args.set_cfgs)
 
-        print('Using config:')
-        pprint.pprint(cfg)
+        logging.debug('Using config:')
+        logging.debug(pprint.pformat(cfg))
         np.random.seed(cfg.RNG_SEED)
 
         #torch.backends.cudnn.benchmark = True
         if torch.cuda.is_available() and not self.args.cuda:
-            print("WARNING: You have a CUDA device, "+\
+            logging.info("WARNING: You have a CUDA device, "+\
                   "so you should probably run with --cuda")
 
         # train set
@@ -127,7 +128,7 @@ class Trainer(object):
         imdb, roidb, ratio_list, ratio_index = combined_roidb(self.args.imdb_name)
         train_size = len(roidb)
 
-        print('{:d} roidb entries'.format(len(roidb)))
+        logging.info('{:d} roidb entries'.format(len(roidb)))
 
         output_dir = self.args.save_dir + "/" + self.args.net + "/" + self.args.dataset
         if not os.path.exists(output_dir):
@@ -188,7 +189,7 @@ class Trainer(object):
             fasterRCNN = resnet(n_classes, 152, pretrained=True,
                                 class_agnostic=self.args.class_agnostic)
         else:
-            print("network is not defined")
+            logging.info("network is not defined")
             pdb.set_trace()
 
         fasterRCNN.create_architecture()
@@ -224,7 +225,7 @@ class Trainer(object):
             load_name = os.path.join(self.args.save_dir, self.args.net, self.args.resume_dataset,
               'faster_rcnn_{}_{}_{}.pth'.format(self.args.checksession, self.args.checkepoch,
                                                 self.args.checkpoint))
-            print("loading checkpoint %s" % (load_name))
+            logging.info("loading checkpoint %s" % (load_name))
             checkpoint = torch.load(load_name)
             self.args.session = checkpoint['session']
             self.args.start_epoch = checkpoint['epoch']
@@ -233,7 +234,7 @@ class Trainer(object):
             lr = optimizer.param_groups[0]['lr']
             if 'pooling_mode' in checkpoint.keys():
                 cfg.POOLING_MODE = checkpoint['pooling_mode']
-            print("loaded checkpoint %s" % (load_name))
+            logging.info("loaded checkpoint %s" % (load_name))
 
         # Reconfigure the FC layer to the new datasets number of classes
         # 2048 is the output from the previous layer
@@ -251,6 +252,9 @@ class Trainer(object):
             from tensorboardX import SummaryWriter
             logger = SummaryWriter("logs")
 
+        logging.info("##############")
+        logging.info("Begin Training")
+        logging.info("##############")
         for epoch in range(self.args.start_epoch, self.args.max_epochs + 1):
             # setting to train mode
             fasterRCNN.train()
@@ -306,15 +310,16 @@ class Trainer(object):
                         fg_cnt = torch.sum(rois_label.data.ne(0))
                         bg_cnt = rois_label.data.numel() - fg_cnt
 
-                    print(f"[session {self.args.session}] "+\
-                          f"[epoch {epoch}][iter {step}/{iters_per_epoch}] "+\
-                          f"loss: {loss_temp}, lr: {lr}")
-                    print(f"\t\t\t\tfg/bg=({int(fg_cnt)}/{int(bg_cnt)}), "+\
-                          f"time cost: {end-start}")
-                    print(f"\t\t\t\trpn_cls: {round(loss_rpn_cls, 3)}, "+\
+                    logging.info(f"[session {self.args.session}] "+\
+                          f"[epoch {epoch}][iter {step}/{iters_per_epoch}]")
+                    logging.info(f"Loss: {loss_temp}, lr: {lr}")
+                    logging.info(f"FG/BG=({int(fg_cnt)}/{int(bg_cnt)}), "+\
+                          f"Time cost: {end-start}")
+                    logging.info(f"rpn_cls: {round(loss_rpn_cls, 3)}, "+\
                           f"rpn_box: {round(loss_rpn_box, 3)}, "+\
                           f"rcnn_cls: {round(loss_rcnn_cls, 3)}, "+\
                           f"rcnn_box: {round(loss_rcnn_box, 3)}")
+                    logging.info("--------------------------------------------")
 
                     if self.args.use_tfboard:
                         info = {
@@ -343,7 +348,7 @@ class Trainer(object):
               'pooling_mode': cfg.POOLING_MODE,
               'class_agnostic': self.args.class_agnostic,
             }, save_name)
-            print('save model: {}'.format(save_name))
+            logging.info('save model: {}'.format(save_name))
 
         if self.args.use_tfboard:
             logger.close()
@@ -452,7 +457,8 @@ if __name__ == '__main__':
         return args
 
     cli_args = parse_args()
-    print('Called with args:')
-    print(cli_args)
+    logging.info('Called with args:')
+    logging.info(cli_args)
 
-    Trainer(cli_args, cli=True)
+    trainer = Trainer(cli_args, cli=True)
+    trainer.run()

@@ -21,6 +21,7 @@ from torch.autograd import Variable
 import torch.nn as nn
 import torch.optim as optim
 import pickle
+import logging
 from roi_data_layer.roidb import combined_roidb
 from roi_data_layer.roibatchLoader import roibatchLoader
 from model.utils.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
@@ -61,7 +62,7 @@ class Tester(object):
 
     def run(self):
         if torch.cuda.is_available() and not self.args.cuda:
-            print("WARNING: You have a CUDA device, so you should probably run with --cuda")
+            logging.warning("You have a CUDA device, so you should probably run with --cuda")
 
         np.random.seed(cfg.RNG_SEED)
         if self.args.dataset == "pascal_voc":
@@ -92,14 +93,14 @@ class Tester(object):
         if self.args.set_cfgs is not None:
             cfg_from_list(self.args.set_cfgs)
 
-        print('Using config:')
-        pprint.pprint(cfg)
+        logging.info('Using config:')
+        pprint.pformat(cfg)
 
         cfg.TRAIN.USE_FLIPPED = False
         imdb, roidb, ratio_list, ratio_index = combined_roidb(self.args.imdbval_name, False)
         imdb.competition_mode(on=True)
 
-        print('{:d} roidb entries'.format(len(roidb)))
+        logging.info('{:d} roidb entries'.format(len(roidb)))
 
         input_dir = self.args.load_dir + "/" + self.args.net + "/" + self.args.dataset
         if not os.path.exists(input_dir):
@@ -117,19 +118,19 @@ class Tester(object):
         elif self.args.net == 'res152':
             fasterRCNN = resnet(imdb.classes, 152, pretrained=False, class_agnostic=self.args.class_agnostic)
         else:
-            print("network is not defined")
+            logging.error("network is not defined")
             pdb.set_trace()
 
         fasterRCNN.create_architecture()
 
-        print("load checkpoint %s" % (load_name))
+        logging.debug("load checkpoint %s" % (load_name))
         checkpoint = torch.load(load_name)
         fasterRCNN.load_state_dict(checkpoint['model'])
         if 'pooling_mode' in checkpoint.keys():
             cfg.POOLING_MODE = checkpoint['pooling_mode']
 
 
-        print('load model successfully!')
+        logging.debug('load model successfully!')
         # initilize the tensor holder here.
         im_data = torch.FloatTensor(1)
         im_info = torch.FloatTensor(1)
@@ -279,11 +280,11 @@ class Tester(object):
         with open(det_file, 'wb') as f:
             pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
 
-        print('Evaluating detections')
+        logging.info('Evaluating detections')
         imdb.evaluate_detections(all_boxes, output_dir)
 
         end = time.time()
-        print("test time: %0.4fs" % (end - start))
+        logging.info("test time: %0.4fs" % (end - start))
 
 def build_parser():
     """
@@ -342,7 +343,7 @@ if __name__ == '__main__':
 
     args = build_parser().parse_args()
 
-    print('Called with args:')
-    print(args)
+    logging.info('Called with args:')
+    logging.info(args)
 
     Tester(args, cli=True)
