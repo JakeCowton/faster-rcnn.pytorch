@@ -31,7 +31,7 @@ from model.utils.net_utils import save_net, load_net, vis_detections
 from model.faster_rcnn.vgg16 import vgg16
 from model.faster_rcnn.resnet import resnet
 
-from dict_to_args import DictToArgs
+from utils import DictToArgs
 
 import pdb
 
