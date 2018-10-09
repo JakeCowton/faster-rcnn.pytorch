@@ -445,9 +445,13 @@ def build_parser():
                         help='whether use tensorboard',
                         action='store_true')
 
+    parser.add_argument('-v', dest="verbose", help="Use debug statements",
+                        action="store_true")
+
     return parser
 
 if __name__ == '__main__':
+    import coloredlogs
     def parse_args():
         """
         Parse input arguments
@@ -457,6 +461,13 @@ if __name__ == '__main__':
         return args
 
     cli_args = parse_args()
+
+    verbosity = "DEBUG" if cli_args.verbose else "INFO"
+    coloredlogs.install(level=verbosity,
+                        format="%(asctime)s %(levelname)s %(module)s" + \
+                               "- %(funcName)s: %(message)s",
+                        datefmt="%Y-%m-%d %H:%M:%S")
+
     logging.info('Called with args:')
     logging.info(cli_args)
 

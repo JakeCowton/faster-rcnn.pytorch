@@ -333,18 +333,22 @@ def build_parser():
     parser.add_argument('--vis', dest='vis',
                         help='visualization mode',
                         action='store_true')
+    parser.add_argument('-v', dest="verbose", help="Use debug statements",
+                        action="store_true")
     return parser
 
 if __name__ == '__main__':
+    import coloredlogs
+    cli_args = build_parser().parse_args()
 
-    lr = cfg.TRAIN.LEARNING_RATE
-    momentum = cfg.TRAIN.MOMENTUM
-    weight_decay = cfg.TRAIN.WEIGHT_DECAY
-
-    args = build_parser().parse_args()
+    verbosity = "DEBUG" if cli_args.verbose else "INFO"
+    coloredlogs.install(level=verbosity,
+                        format="%(asctime)s %(levelname)s %(module)s" + \
+                               "- %(funcName)s: %(message)s",
+                        datefmt="%Y-%m-%d %H:%M:%S")
 
     logging.info('Called with args:')
-    logging.info(args)
+    logging.info(cli_args)
 
-    tester = Tester(args, cli=True)
+    tester = Tester(cli_args, cli=True)
     tester.test()
