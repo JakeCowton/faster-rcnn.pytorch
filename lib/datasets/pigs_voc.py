@@ -11,11 +11,12 @@ import numpy as np
 import scipy
 
 from .imdb import imdb
+from .voc_eval import voc_eval
 
 
 class pigs_voc(imdb):
 
-    def __init__(self):
+    def __init__(self, image_set):
         imdb.__init__(self, "pigs_voc")
         self._classes = ('__background__',
                          'pig')
@@ -29,12 +30,14 @@ class pigs_voc(imdb):
         self._img_ext = ".jpg"
         self._image_filepaths = self._load_image_filepaths()
 
+        self._image_set = image_set
+
         self._image_index = self._load_image_set_index()
 
         self._roidb_handler = self.gt_roidb
 
-        self.config = {'cleanup': True,
-                       'use_salt': True,
+        self.config = {'cleanup': False,
+                       'use_salt': False,
                        'use_diff': False,
                        'matlab_eval': False,
                        'rpn_file': None,
@@ -137,5 +140,81 @@ class pigs_voc(imdb):
         """
         Load the indexes listed in this dataset's image set file.
         """
-        return range(len(listdir(path.join(self._img_root,
-                                           self._img_annotation_folder))))
+        if self._image_set == "train":
+            pass
+        elif self._image_set == "val":
+            pass
+        elif self._image_set == "test":
+            pass
+        else:
+            logging.warning("Giving you all the images")
+            return range(len(listdir(path.join(self._img_root,
+                                               self._img_annotation_folder))))
+
+    def _get_voc_results_file_template(self):
+        # VOCdevkit/results/VOC2007/Main/<comp_id>_det_test_aeroplane.txt
+        filename = 'det_' + self._image_set + '_{:s}.txt'
+        filedir = os.path.join(self._img_root, 'results')
+        if not os.path.exists(filedir):
+            os.makedirs(filedir)
+        path = os.path.join(filedir, filename)
+        return path
+
+    def _write_voc_results_file(self, all_boxes):
+        for cls_ind, cls in enumerate(self.classes):
+            if cls == '__background__':
+                continue
+            logging.info('Writing {} VOC results file'.format(cls))
+            filename = self._get_voc_results_file_template().format(cls)
+            with open(filename, 'wt') as f:
+                for im_ind, index in enumerate(self.image_index):
+                    dets = all_boxes[cls_ind][im_ind]
+                    if dets == []:
+                        continue
+                    # the VOCdevkit expects 1-based indices
+                    for k in xrange(dets.shape[0]):
+                        f.write('{:s} {:.3f} {:.1f} {:.1f} {:.1f} {:.1f}\n'.
+                                format(index, dets[k, -1],
+                                       dets[k, 0] + 1, dets[k, 1] + 1,
+                                       dets[k, 2] + 1, dets[k, 3] + 1))
+
+    def _do_python_eval(self, output_dir='output'):
+        # Path to annotations folder
+        annopath = os.path.join(self._img_root, self._img_annotation_folder)
+        # Path to file outlining images to use in test
+        imagesetfile = os.path.join(self._img_root, "test_set.txt")
+        # Where to cached the annotations
+        cachedir = self.cache_file
+        aps = []
+        # The PASCAL VOC metric changed in 2010
+        use_07_metric = True
+        logging.info('VOC07 metric? ' + ('Yes' if use_07_metric else 'No'))
+        if not os.path.isdir(output_dir):
+            os.mkdir(output_dir)
+        for i, cls in enumerate(self._classes):
+            if cls == '__background__':
+                continue
+            filename = self._get_voc_results_file_template().format(cls)
+            rec, prec, ap = voc_eval(
+                filename, annopath, imagesetfile, cls, cachedir, ovthresh=0.5,
+                use_07_metric=use_07_metric)
+            aps += [ap]
+            logging.info('AP for {} = {:.4f}'.format(cls, ap))
+            with open(os.path.join(output_dir, cls + '_pr.pkl'), 'wb') as f:
+                pickle.dump({'rec': rec, 'prec': prec, 'ap': ap}, f)
+        logging.info('Mean AP = {:.4f}'.format(np.mean(aps)))
+        logging.info('~~~~~~~~')
+        logging.info('Results:')
+        for ap in aps:
+            logging.info('{:.3f}'.format(ap))
+        logging.info('{:.3f}'.format(np.mean(aps)))
+
+    def evaluate_detections(self, all_boxes, output_dir):
+        self._write_voc_results_file(all_boxes)
+        self._do_python_eval(output_dir)
+        if self.config['cleanup']:
+            for cls in self._classes:
+                if cls == '__background__':
+                    continue
+                filename = self._get_voc_results_file_template().format(cls)
+                os.remove(filename)
