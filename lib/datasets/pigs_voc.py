@@ -17,7 +17,10 @@ from .voc_eval import voc_eval
 class pigs_voc(imdb):
 
     def __init__(self, image_set):
-        imdb.__init__(self, "pigs_voc")
+        imdb.__init__(self, f"pigs_voc_{image_set}")
+
+        self._image_set = image_set
+
         self._classes = ('__background__',
                          'pig')
         self._class_to_ind = dict(zip(self.classes, range(self.num_classes)))
@@ -29,8 +32,6 @@ class pigs_voc(imdb):
         self._annotation_ext = ".xml"
         self._img_ext = ".jpg"
         self._image_filepaths = self._load_image_filepaths()
-
-        self._image_set = image_set
 
         self._image_index = self._load_image_set_index()
 
@@ -65,12 +66,8 @@ class pigs_voc(imdb):
         """
         Only return images that have corresponding XML files
         """
-        filepaths = [path.join(self._img_root,
-                               self._img_jpg_folder,
-                               fn.replace(self._annotation_ext,
-                                          self._img_ext))\
-                     for fn in sorted(listdir(path.join(self._img_root,
-                                                  self._img_annotation_folder)))]
+        filepaths = [path.join(self._img_root, self._img_jpg_folder, fn)\
+                     for fn in self._get_image_names()]
         return filepaths
 
     def gt_roidb(self):
@@ -79,7 +76,7 @@ class pigs_voc(imdb):
 
         This function loads/saves from/to a cache file to speed up future calls.
         """
-        cache_file = path.join(self.cache_file, self.name + '_gt_roidb.pkl')
+        cache_file = path.join(self.cache_file, f'{self.name}_{self._image_set}_gt_roidb.pkl')
         if path.exists(cache_file):
             with open(cache_file, 'rb') as fid:
                 roidb = pickle.load(fid)
@@ -135,17 +132,23 @@ class pigs_voc(imdb):
                 'gt_overlaps': overlaps,
                 'flipped': False,
                 'seg_areas': seg_areas}
+    def _get_image_names(self):
+        # Get the names of images in the image set
+        with open(path.join(self._img_root,
+                            f"{self._image_set}.txt"), "r") as f:
+            image_names = [x.strip() + self._img_ext for x in f.readlines()]
+        return image_names
 
     def _load_image_set_index(self):
         """
         Load the indexes listed in this dataset's image set file.
         """
-        if self._image_set == "train":
-            pass
-        elif self._image_set == "val":
-            pass
-        elif self._image_set == "test":
-            pass
+        if self._image_set:
+            image_names = self._get_image_names()
+            # Enumerate the images
+            enum = enumerate(sorted(listdir(path.join(self._img_root,
+                                                      self._img_jpg_folder))))
+            return [i for i, f in enum if f in image_names]
         else:
             logging.warning("Giving you all the images")
             return range(len(listdir(path.join(self._img_root,

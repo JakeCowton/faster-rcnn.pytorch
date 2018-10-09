@@ -61,7 +61,9 @@ for split in ['train', 'val', 'val1', 'val2', 'test']:
     __sets[name] = (lambda split=split, devkit_path=devkit_path, data_path=data_path: imagenet(split,devkit_path,data_path))
 
 # set up pigs VOC
-__sets["pigs_voc_train"] = (lambda : pigs_voc())
+for split in ["train", "val", "test"]:
+    name = f"pigs_voc_{split}"
+    __sets[name] = (lambda split=split: pigs_voc(split))
 
 def get_imdb(name):
     """Get an imdb (image database) by name."""
