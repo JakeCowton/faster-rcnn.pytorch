@@ -58,47 +58,48 @@ class Trainer(object):
         else:
             self.args = args
 
-    def train(self):
-        if self.args.transfer:
-            assert self.args.resume == True,\
-                   "Resume must be true when transfer learning"
-            assert self.args.resume_classes is not None,\
-                   "resume_classes must have a value when transfer learning"
-
+    def set_data_names(self):
         if self.args.dataset == "pascal_voc":
             self.args.imdb_name = "voc_2007_trainval"
             self.args.imdbval_name = "voc_2007_test"
-            self.args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS',
-                             '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '20']
+            self.args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]',
+                                  'ANCHOR_RATIOS', '[0.5,1,2]',
+                                  'MAX_NUM_GT_BOXES', '20']
         elif self.args.dataset == "pigs_voc":
             self.args.imdb_name = "pigs_voc_train"
             self.args.imdbval_name = "pigs_voc_train"
-            self.args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS',
-                             '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '20']
+            self.args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]',
+                                  'ANCHOR_RATIOS', '[0.5,1,2]',
+                                  'MAX_NUM_GT_BOXES', '20']
         elif self.args.dataset == "pascal_voc_0712":
             self.args.imdb_name = "voc_2007_trainval+voc_2012_trainval"
             self.args.imdbval_name = "voc_2007_test"
-            self.args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS',
-                             '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '20']
+            self.args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]',
+                                  'ANCHOR_RATIOS', '[0.5,1,2]',
+                                  'MAX_NUM_GT_BOXES', '20']
         elif self.args.dataset == "coco":
             self.args.imdb_name = "coco_2014_train+coco_2014_valminusminival"
             self.args.imdbval_name = "coco_2014_minival"
-            self.args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS',
-                             '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
+            self.args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]',
+                                  'ANCHOR_RATIOS', '[0.5,1,2]',
+                                  'MAX_NUM_GT_BOXES', '50']
         elif self.args.dataset == "imagenet":
             self.args.imdb_name = "imagenet_train"
             self.args.imdbval_name = "imagenet_val"
-            self.args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS',
-                             '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '30']
+            self.args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]',
+                                  'ANCHOR_RATIOS', '[0.5,1,2]',
+                                  'MAX_NUM_GT_BOXES', '30']
         elif self.args.dataset == "vg":
             # train sizes: train, smalltrain, minitrain
-            # train scale: ['150-50-20', '150-50-50', '500-150-80', '750-250-150',
+            # train scale: ['150-50-20','150-50-50','500-150-80', '750-250-150',
             # '1750-700-450', '1600-400-20']
             self.args.imdb_name = "vg_150-50-50_minitrain"
             self.args.imdbval_name = "vg_150-50-50_minival"
-            self.args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS',
-                             '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
+            self.args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]',
+                                  'ANCHOR_RATIOS', '[0.5,1,2]',
+                                  'MAX_NUM_GT_BOXES', '50']
 
+    def set_config(self):
         self.args.cfg_file = "cfgs/{}_ls.yml".format(self.args.net) \
                         if self.args.large_scale \
                         else "cfgs/{}.yml".format(self.args.net)
@@ -118,135 +119,279 @@ class Trainer(object):
                   "so you should probably run with --cuda")
 
         # train set
-        # Note: Use validation set and disable the flipped to enable faster loading.
+        # Note: Use validation set and disable the flipped to enable faster
+        # loading.
         if self.args.dataset == "pigs_voc":
             cfg.TRAIN.USE_FLIPPED = False
         else:
             cfg.TRAIN.USE_FLIPPED = True
 
         cfg.USE_GPU_NMS = self.args.cuda
-        imdb, roidb, ratio_list, ratio_index = combined_roidb(self.args.imdb_name)
-        train_size = len(roidb)
-
-        logging.info('{:d} roidb entries'.format(len(roidb)))
-
-        output_dir = self.args.save_dir + "/" + self.args.net + "/" + self.args.dataset
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-
-        sampler_batch = Sampler(train_size, self.args.batch_size)
-
-        dataset = roibatchLoader(roidb, ratio_list, ratio_index, self.args.batch_size, \
-                                 imdb.num_classes, training=True)
-
-        dataloader = torch.utils.data.DataLoader(dataset,
-                                                 batch_size=self.args.batch_size,
-                                                 sampler=sampler_batch,
-                                                 num_workers=self.args.num_workers)
-
-        # initilize the tensor holder here.
-        im_data = torch.FloatTensor(1)
-        im_info = torch.FloatTensor(1)
-        num_boxes = torch.LongTensor(1)
-        gt_boxes = torch.FloatTensor(1)
-
-        # ship to cuda
-        if self.args.cuda:
-            im_data = im_data.cuda()
-            im_info = im_info.cuda()
-            num_boxes = num_boxes.cuda()
-            gt_boxes = gt_boxes.cuda()
-
-        # make variable
-        im_data = Variable(im_data)
-        im_info = Variable(im_info)
-        num_boxes = Variable(num_boxes)
-        gt_boxes = Variable(gt_boxes)
 
         if self.args.cuda:
             cfg.CUDA = True
 
+
+    def setup_data(self):
+        self.train_imdb,\
+        self.train_roidb,\
+        self.train_ratio_list,\
+        self.train_ratio_index = combined_roidb(self.args.imdb_name)
+
+        self.train_size = len(self.train_roidb)
+
+        logging.info(f'{len(self.train_roidb)} training roidb entries')
+
+    def create_output_dir(self):
+        output_dir = os.path.join(self.args.save_dir,
+                                  self.args.net,
+                                  self.args.dataset)
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        self.output_dir = output_dir
+
+    def build_training_dataloader(self):
+        sampler_batch = Sampler(self.train_size, self.args.batch_size)
+
+        dataset = roibatchLoader(self.train_roidb, self.train_ratio_list,
+                                 self.train_ratio_index, self.args.batch_size,
+                                 self.train_imdb.num_classes, training=True)
+
+        self.dataloader = torch.utils.data.DataLoader(dataset,
+                                              batch_size=self.args.batch_size,
+                                              sampler=sampler_batch,
+                                              num_workers=self.args.num_workers)
+    def initialise_tensor_data(self):
+        # initilize the tensor holder here.
+        self.im_data = torch.FloatTensor(1)
+        self.im_info = torch.FloatTensor(1)
+        self.num_boxes = torch.LongTensor(1)
+        self.gt_boxes = torch.FloatTensor(1)
+
+        # ship to cuda
+        if self.args.cuda:
+            self.im_data = self.im_data.cuda()
+            self.im_info = self.im_info.cuda()
+            self.num_boxes = self.num_boxes.cuda()
+            self.gt_boxes = self.gt_boxes.cuda()
+
+        # make variable
+        self.im_data = Variable(self.im_data)
+        self.im_info = Variable(self.im_info)
+        self.num_boxes = Variable(self.num_boxes)
+        self.gt_boxes = Variable(self.gt_boxes)
+
+    def construct_network(self):
         # If we are resuming a network and doing transfer learning
         # then we want the network needs to be initialised with the
         # resuming datasets number of classes rather than the new
-        # dataset that was loaded in to imdb
+        # dataset that was loaded in to self.train_imdb
         if self.args.resume and self.args.transfer:
             n_classes = list(range(self.args.resume_classes))
         else:
-            n_classes = imdb.classes
+            n_classes = self.train_imdb.classes
 
         # initilize the network here.
         if self.args.net == 'vgg16':
-            fasterRCNN = vgg16(n_classes, pretrained=True,
+            self.fasterRCNN = vgg16(n_classes, pretrained=True,
                                class_agnostic=self.args.class_agnostic)
         elif self.args.net == 'res101':
-            fasterRCNN = resnet(n_classes, 101, pretrained=True,
+            self.fasterRCNN = resnet(n_classes, 101, pretrained=True,
                                 class_agnostic=self.args.class_agnostic)
         elif self.args.net == 'res50':
-            fasterRCNN = resnet(n_classes, 50, pretrained=True,
+            self.fasterRCNN = resnet(n_classes, 50, pretrained=True,
                                 class_agnostic=self.args.class_agnostic)
         elif self.args.net == 'res152':
-            fasterRCNN = resnet(n_classes, 152, pretrained=True,
+            self.fasterRCNN = resnet(n_classes, 152, pretrained=True,
                                 class_agnostic=self.args.class_agnostic)
         else:
             logging.info("network is not defined")
             pdb.set_trace()
 
-        fasterRCNN.create_architecture()
+        self.fasterRCNN.create_architecture()
 
-        lr = cfg.TRAIN.LEARNING_RATE
-        lr = self.args.lr
+        selflr = cfg.TRAIN.LEARNING_RATE
+        self.lr = self.args.lr
         #tr_momentum = cfg.TRAIN.MOMENTUM
         #tr_momentum = self.args.momentum
 
         params = []
-        for key, value in dict(fasterRCNN.named_parameters()).items():
+        for key, value in dict(self.fasterRCNN.named_parameters()).items():
             if value.requires_grad:
                 if 'bias' in key:
                     params += [{'params':[value],
-                                'lr':lr*(cfg.TRAIN.DOUBLE_BIAS + 1),
+                                'lr':self.lr*(cfg.TRAIN.DOUBLE_BIAS + 1),
                                 'weight_decay': cfg.TRAIN.BIAS_DECAY and \
                                                 cfg.TRAIN.WEIGHT_DECAY or 0}]
                 else:
                     params += [{'params':[value],
-                                'lr':lr, 'weight_decay': cfg.TRAIN.WEIGHT_DECAY}]
+                                'lr':self.lr,
+                                'weight_decay': cfg.TRAIN.WEIGHT_DECAY}]
 
         if self.args.optimizer == "adam":
-            lr = lr * 0.1
-            optimizer = torch.optim.Adam(params)
+            self.lr = self.lr * 0.1
+            self.optimizer = torch.optim.Adam(params)
 
         elif self.args.optimizer == "sgd":
-            optimizer = torch.optim.SGD(params, momentum=cfg.TRAIN.MOMENTUM)
+            self.optimizer = torch.optim.SGD(params,
+                                              momentum=cfg.TRAIN.MOMENTUM)
 
+        if self.args.cuda:
+            self.fasterRCNN.cuda()
+
+    def resume_network(self):
+        load_name = os.path.join(self.args.save_dir, self.args.net,
+                                 self.args.resume_dataset,
+          'faster_rcnn_{}_{}_{}.pth'.format(self.args.checksession,
+                                            self.args.checkepoch,
+                                            self.args.checkpoint))
+        logging.info("loading checkpoint %s" % (load_name))
+        checkpoint = torch.load(load_name)
+        self.args.session = checkpoint['session']
+        self.args.start_epoch = checkpoint['epoch']
+        self.fasterRCNN.load_state_dict(checkpoint['model'])
+        self.optimizer.load_state_dict(checkpoint['optimizer'])
+        self.lr = optimizer.param_groups[0]['lr']
+        if 'pooling_mode' in checkpoint.keys():
+            cfg.POOLING_MODE = checkpoint['pooling_mode']
+        logging.info("loaded checkpoint %s" % (load_name))
+
+    def reconfigure_fc_layer(self):
+        """
+        Reconfigure the FC layer to the new datasets number of classes
+        2048 is the output from the previous layer
+        """
+        self.fasterRCNN.RCNN_cls_score = nn.Linear(2048,
+                                                   self.train_imdb.num_classes)
         if self.args.cuda:
             fasterRCNN.cuda()
 
-        if self.args.resume:
-            load_name = os.path.join(self.args.save_dir, self.args.net, self.args.resume_dataset,
-              'faster_rcnn_{}_{}_{}.pth'.format(self.args.checksession, self.args.checkepoch,
-                                                self.args.checkpoint))
-            logging.info("loading checkpoint %s" % (load_name))
-            checkpoint = torch.load(load_name)
-            self.args.session = checkpoint['session']
-            self.args.start_epoch = checkpoint['epoch']
-            fasterRCNN.load_state_dict(checkpoint['model'])
-            optimizer.load_state_dict(checkpoint['optimizer'])
-            lr = optimizer.param_groups[0]['lr']
-            if 'pooling_mode' in checkpoint.keys():
-                cfg.POOLING_MODE = checkpoint['pooling_mode']
-            logging.info("loaded checkpoint %s" % (load_name))
+    def train_epoch(self, epoch):
+        # setting to train mode
+        self.fasterRCNN.train()
+        loss_temp = 0
+        start = time.time()
 
-        # Reconfigure the FC layer to the new datasets number of classes
-        # 2048 is the output from the previous layer
+        if epoch % (self.args.lr_decay_step + 1) == 0:
+            adjust_learning_rate(self.optimizer, self.args.lr_decay_gamma)
+            self.lr *= self.args.lr_decay_gamma
+
+        data_iter = iter(self.dataloader)
+        for step in range(self.iters_per_epoch):
+            data = next(data_iter)
+            self.im_data.data.resize_(data[0].size()).copy_(data[0])
+            self.im_info.data.resize_(data[1].size()).copy_(data[1])
+            self.gt_boxes.data.resize_(data[2].size()).copy_(data[2])
+            self.num_boxes.data.resize_(data[3].size()).copy_(data[3])
+
+            self.fasterRCNN.zero_grad()
+            rois, cls_prob, bbox_pred, \
+            rpn_loss_cls, rpn_loss_box, \
+            RCNN_loss_cls, RCNN_loss_bbox, \
+            rois_label = self.fasterRCNN(self.im_data,
+                                         self.im_info,
+                                         self.gt_boxes,
+                                         self.num_boxes)
+
+            loss = rpn_loss_cls.mean() + rpn_loss_box.mean() \
+                 + RCNN_loss_cls.mean() + RCNN_loss_bbox.mean()
+            loss_temp += loss.item()
+
+            # backward
+            self.optimizer.zero_grad()
+            loss.backward()
+            if self.args.net == "vgg16":
+                clip_gradient(self.fasterRCNN, 10.)
+            self.optimizer.step()
+
+            if step % self.args.disp_interval == 0:
+                end = time.time()
+                if step > 0:
+                    loss_temp /= (self.args.disp_interval + 1)
+
+                if self.args.mGPUs:
+                    loss_rpn_cls = rpn_loss_cls.mean().item()
+                    loss_rpn_box = rpn_loss_box.mean().item()
+                    loss_rcnn_cls = RCNN_loss_cls.mean().item()
+                    loss_rcnn_box = RCNN_loss_bbox.mean().item()
+                    fg_cnt = torch.sum(rois_label.data.ne(0))
+                    bg_cnt = rois_label.data.numel() - fg_cnt
+                else:
+                    loss_rpn_cls = rpn_loss_cls.item()
+                    loss_rpn_box = rpn_loss_box.item()
+                    loss_rcnn_cls = RCNN_loss_cls.item()
+                    loss_rcnn_box = RCNN_loss_bbox.item()
+                    fg_cnt = torch.sum(rois_label.data.ne(0))
+                    bg_cnt = rois_label.data.numel() - fg_cnt
+
+                logging.info(f"[session {self.args.session}] "+\
+                      f"[epoch {epoch}][iter {step}/{self.iters_per_epoch}]")
+                logging.info(f"Loss: {loss_temp}, lr: {self.lr}")
+                logging.info(f"FG/BG=({int(fg_cnt)}/{int(bg_cnt)}), "+\
+                      f"Time cost: {end-start}")
+                logging.info(f"rpn_cls: {round(loss_rpn_cls, 3)}, "+\
+                      f"rpn_box: {round(loss_rpn_box, 3)}, "+\
+                      f"rcnn_cls: {round(loss_rcnn_cls, 3)}, "+\
+                      f"rcnn_box: {round(loss_rcnn_box, 3)}")
+                logging.info("--------------------------------------------")
+
+                if self.args.use_tfboard:
+                    info = {
+                      'loss': loss_temp,
+                      'loss_rpn_cls': loss_rpn_cls,
+                      'loss_rpn_box': loss_rpn_box,
+                      'loss_rcnn_cls': loss_rcnn_cls,
+                      'loss_rcnn_box': loss_rcnn_box
+                    }
+                    logger.add_scalars("logs_s_{}/losses".format(self.args.session),
+                                       info, (epoch - 1) * self.iters_per_epoch +\
+                                       step)
+
+                loss_temp = 0
+                start = time.time()
+
+
+        save_name = os.path.join(self.output_dir, 'faster_rcnn_{}_{}_{}.pth'\
+                                             .format(self.args.session, epoch, step))
+        save_checkpoint({
+          'session': self.args.session,
+          'epoch': epoch + 1,
+          'model': self.fasterRCNN.module.state_dict() if self.args.mGPUs \
+                                                  else self.fasterRCNN.state_dict(),
+          'self.optimizer': self.optimizer.state_dict(),
+          'pooling_mode': cfg.POOLING_MODE,
+          'class_agnostic': self.args.class_agnostic,
+        }, save_name)
+        logging.info('save model: {}'.format(save_name))
+
+    def train(self):
         if self.args.transfer:
-            fasterRCNN.RCNN_cls_score = nn.Linear(2048, imdb.num_classes)
-            if self.args.cuda:
-                fasterRCNN.cuda()
+            assert self.args.resume == True,\
+                   "Resume must be true when transfer learning"
+            assert self.args.resume_classes is not None,\
+                   "resume_classes must have a value when transfer learning"
+
+        self.set_data_names()
+        self.set_config()
+        self.setup_data()
+        self.create_output_dir()
+
+        self.build_training_dataloader()
+
+        self.initialise_tensor_data()
+
+        self.construct_network()
+
+        if self.args.resume:
+            self.resume_network()
+
+        if self.args.transfer:
+            self.reconfigure_fc_layer()
 
         if self.args.mGPUs:
-            fasterRCNN = nn.DataParallel(fasterRCNN)
+            self.fasterRCNN = nn.DataParallel(self.fasterRCNN)
 
-        iters_per_epoch = int(train_size / self.args.batch_size)
+        self.iters_per_epoch = int(self.train_size / self.args.batch_size)
 
         if self.args.use_tfboard:
             from tensorboardX import SummaryWriter
@@ -256,99 +401,7 @@ class Trainer(object):
         logging.info("Begin Training")
         logging.info("##############")
         for epoch in range(self.args.start_epoch, self.args.max_epochs + 1):
-            # setting to train mode
-            fasterRCNN.train()
-            loss_temp = 0
-            start = time.time()
-
-            if epoch % (self.args.lr_decay_step + 1) == 0:
-                adjust_learning_rate(optimizer, self.args.lr_decay_gamma)
-                lr *= self.args.lr_decay_gamma
-
-            data_iter = iter(dataloader)
-            for step in range(iters_per_epoch):
-                data = next(data_iter)
-                im_data.data.resize_(data[0].size()).copy_(data[0])
-                im_info.data.resize_(data[1].size()).copy_(data[1])
-                gt_boxes.data.resize_(data[2].size()).copy_(data[2])
-                num_boxes.data.resize_(data[3].size()).copy_(data[3])
-
-                fasterRCNN.zero_grad()
-                rois, cls_prob, bbox_pred, \
-                rpn_loss_cls, rpn_loss_box, \
-                RCNN_loss_cls, RCNN_loss_bbox, \
-                rois_label = fasterRCNN(im_data, im_info, gt_boxes, num_boxes)
-
-                loss = rpn_loss_cls.mean() + rpn_loss_box.mean() \
-                     + RCNN_loss_cls.mean() + RCNN_loss_bbox.mean()
-                loss_temp += loss.item()
-
-                # backward
-                optimizer.zero_grad()
-                loss.backward()
-                if self.args.net == "vgg16":
-                    clip_gradient(fasterRCNN, 10.)
-                optimizer.step()
-
-                if step % self.args.disp_interval == 0:
-                    end = time.time()
-                    if step > 0:
-                        loss_temp /= (self.args.disp_interval + 1)
-
-                    if self.args.mGPUs:
-                        loss_rpn_cls = rpn_loss_cls.mean().item()
-                        loss_rpn_box = rpn_loss_box.mean().item()
-                        loss_rcnn_cls = RCNN_loss_cls.mean().item()
-                        loss_rcnn_box = RCNN_loss_bbox.mean().item()
-                        fg_cnt = torch.sum(rois_label.data.ne(0))
-                        bg_cnt = rois_label.data.numel() - fg_cnt
-                    else:
-                        loss_rpn_cls = rpn_loss_cls.item()
-                        loss_rpn_box = rpn_loss_box.item()
-                        loss_rcnn_cls = RCNN_loss_cls.item()
-                        loss_rcnn_box = RCNN_loss_bbox.item()
-                        fg_cnt = torch.sum(rois_label.data.ne(0))
-                        bg_cnt = rois_label.data.numel() - fg_cnt
-
-                    logging.info(f"[session {self.args.session}] "+\
-                          f"[epoch {epoch}][iter {step}/{iters_per_epoch}]")
-                    logging.info(f"Loss: {loss_temp}, lr: {lr}")
-                    logging.info(f"FG/BG=({int(fg_cnt)}/{int(bg_cnt)}), "+\
-                          f"Time cost: {end-start}")
-                    logging.info(f"rpn_cls: {round(loss_rpn_cls, 3)}, "+\
-                          f"rpn_box: {round(loss_rpn_box, 3)}, "+\
-                          f"rcnn_cls: {round(loss_rcnn_cls, 3)}, "+\
-                          f"rcnn_box: {round(loss_rcnn_box, 3)}")
-                    logging.info("--------------------------------------------")
-
-                    if self.args.use_tfboard:
-                        info = {
-                          'loss': loss_temp,
-                          'loss_rpn_cls': loss_rpn_cls,
-                          'loss_rpn_box': loss_rpn_box,
-                          'loss_rcnn_cls': loss_rcnn_cls,
-                          'loss_rcnn_box': loss_rcnn_box
-                        }
-                        logger.add_scalars("logs_s_{}/losses".format(self.args.session),
-                                           info, (epoch - 1) * iters_per_epoch +\
-                                           step)
-
-                    loss_temp = 0
-                    start = time.time()
-
-
-            save_name = os.path.join(output_dir, 'faster_rcnn_{}_{}_{}.pth'\
-                                                 .format(self.args.session, epoch, step))
-            save_checkpoint({
-              'session': self.args.session,
-              'epoch': epoch + 1,
-              'model': fasterRCNN.module.state_dict() if self.args.mGPUs \
-                                                      else fasterRCNN.state_dict(),
-              'optimizer': optimizer.state_dict(),
-              'pooling_mode': cfg.POOLING_MODE,
-              'class_agnostic': self.args.class_agnostic,
-            }, save_name)
-            logging.info('save model: {}'.format(save_name))
+            self.train_epoch(epoch)
 
         if self.args.use_tfboard:
             logger.close()

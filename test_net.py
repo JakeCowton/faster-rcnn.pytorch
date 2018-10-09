@@ -69,6 +69,11 @@ class Tester(object):
             self.args.imdb_name = "voc_2007_trainval"
             self.args.imdbval_name = "voc_2007_test"
             self.args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
+        elif self.args.dataset == "pigs_voc":
+            self.args.imdb_name = "pigs_voc_train"
+            self.args.imdbval_name = "pigs_voc_test"
+            self.args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS',
+                             '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '20']
         elif self.args.dataset == "pascal_voc_0712":
             self.args.imdb_name = "voc_2007_trainval+voc_2012_trainval"
             self.args.imdbval_name = "voc_2007_test"
