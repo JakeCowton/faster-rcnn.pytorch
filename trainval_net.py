@@ -36,6 +36,10 @@ from utils import DictToArgs, Sampler
 
 
 class Trainer(object):
+    """
+    Trains a model on a given dataset with set parameters
+    """
+
     def __init__(self, args, cli=False):
         """
         If cli is False then args is a dict
@@ -43,8 +47,6 @@ class Trainer(object):
         """
         self.cli = cli
         self.build_args(args)
-        self.run()
-
 
     def build_args(self, args):
         # Build an args object if not inputs from a CLI

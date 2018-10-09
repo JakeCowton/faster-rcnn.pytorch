@@ -42,11 +42,13 @@ except NameError:
 
 
 class Tester(object):
+    """
+    Runs the test set of the given dataset on a saved model
+    """
+
     def __init__(self, args, cli=False):
         self.cli = cli
         self.build_args(args)
-        self.run()
-
 
     def build_args(self, args):
         # Build an args object if not inputs from a CLI
