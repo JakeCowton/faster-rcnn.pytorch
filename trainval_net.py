@@ -22,7 +22,6 @@ import torch.nn as nn
 import torch.optim as optim
 
 import torchvision.transforms as transforms
-from torch.utils.data.sampler import Sampler
 
 from roi_data_layer.roidb import combined_roidb
 from roi_data_layer.roibatchLoader import roibatchLoader
@@ -33,41 +32,7 @@ from model.utils.net_utils import weights_normal_init, save_net, load_net, \
 from model.faster_rcnn.vgg16 import vgg16
 from model.faster_rcnn.resnet import resnet
 
-
-class DictToArgs(object):
-    def __init__(self, arg_dict):
-        for k,v in arg_dict.items():
-            setattr(self, k, v)
-
-
-class Sampler(Sampler):
-    def __init__(self, train_size, batch_size):
-        self.num_data = train_size
-        self.num_per_batch = int(train_size / batch_size)
-        self.batch_size = batch_size
-        self.range = torch.arange(0,batch_size).view(1, batch_size).long()
-        self.leftover_flag = False
-        if train_size % batch_size:
-            self.leftover = torch.arange(self.num_per_batch*batch_size,
-                                         train_size).long()
-            self.leftover_flag = True
-
-    def __iter__(self):
-        rand_num = torch.randperm(self.num_per_batch)\
-                                  .view(-1,1) * self.batch_size
-        self.rand_num = rand_num.expand(self.num_per_batch, self.batch_size) +\
-                        self.range
-
-        self.rand_num_view = self.rand_num.view(-1)
-
-        if self.leftover_flag:
-            self.rand_num_view = torch.cat((self.rand_num_view,
-                                            self.leftover),0)
-
-        return iter(self.rand_num_view)
-
-    def __len__(self):
-        return self.num_data
+from utils import DictToArgs, Sampler
 
 
 class Trainer(object):
