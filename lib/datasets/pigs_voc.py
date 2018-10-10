@@ -3,6 +3,7 @@ from __future__ import absolute_import
 
 import logging
 
+import os
 from os import listdir, path
 import xml.etree.ElementTree as ET
 import pickle
@@ -66,8 +67,11 @@ class pigs_voc(imdb):
         """
         Only return images that have corresponding XML files
         """
+        # filepaths = [path.join(self._img_root, self._img_jpg_folder, fn)\
+                     # for fn in self._get_image_names()]
         filepaths = [path.join(self._img_root, self._img_jpg_folder, fn)\
-                     for fn in self._get_image_names()]
+                     for fn in sorted(listdir(path.join(
+                                      self._img_root, self._img_jpg_folder)))]
         return filepaths
 
     def gt_roidb(self):
@@ -175,17 +179,21 @@ class pigs_voc(imdb):
                     if dets == []:
                         continue
                     # the VOCdevkit expects 1-based indices
-                    for k in xrange(dets.shape[0]):
+                    for k in range(dets.shape[0]):
+                        fn = os.path.basename(self.image_path_at(index))[:-4]
                         f.write('{:s} {:.3f} {:.1f} {:.1f} {:.1f} {:.1f}\n'.
-                                format(index, dets[k, -1],
+                                format(fn, dets[k, -1],
                                        dets[k, 0] + 1, dets[k, 1] + 1,
                                        dets[k, 2] + 1, dets[k, 3] + 1))
 
-    def _do_python_eval(self, output_dir='output'):
+    def _do_python_eval(self, output_dir='output', validate=False):
         # Path to annotations folder
-        annopath = os.path.join(self._img_root, self._img_annotation_folder)
+        annopath = os.path.join(self._img_root, self._img_annotation_folder,
+                                '{:s}.xml')
         # Path to file outlining images to use in test
-        imagesetfile = os.path.join(self._img_root, "test_set.txt")
+        imagesetfile = os.path.join(self._img_root, "test.txt") \
+                       if validate is False \
+                       else os.path.join(self._img_root, "val.txt")
         # Where to cached the annotations
         cachedir = self.cache_file
         aps = []
@@ -212,9 +220,9 @@ class pigs_voc(imdb):
             logging.info('{:.3f}'.format(ap))
         logging.info('{:.3f}'.format(np.mean(aps)))
 
-    def evaluate_detections(self, all_boxes, output_dir):
+    def evaluate_detections(self, all_boxes, output_dir, validate):
         self._write_voc_results_file(all_boxes)
-        self._do_python_eval(output_dir)
+        self._do_python_eval(output_dir, validate)
         if self.config['cleanup']:
             for cls in self._classes:
                 if cls == '__background__':

@@ -34,6 +34,7 @@ from model.faster_rcnn.vgg16 import vgg16
 from model.faster_rcnn.resnet import resnet
 
 from utils import DictToArgs, Sampler
+from test_net import Tester
 
 
 class Trainer(object):
@@ -364,6 +365,17 @@ class Trainer(object):
         }, save_name)
         logging.info('save model: {}'.format(save_name))
 
+    def validate(self, epoch):
+        validator = Tester({"dataset": self.args.dataset,
+                            "net": self.args.net,
+                            "load_dir": self.args.save_dir,
+                            "cuda": self.args.cuda,
+                            "checksession": self.args.session,
+                            "checkepoch": epoch,
+                            "checkpoint": self.iters_per_epoch-1,
+                            "validate": True})
+        val_resul = validator.test()
+
     def train(self):
         if self.args.transfer:
             assert self.args.resume == True,\
@@ -401,7 +413,8 @@ class Trainer(object):
         logging.info("Begin Training")
         logging.info("##############")
         for epoch in range(self.args.start_epoch, self.args.max_epochs + 1):
-            self.train_epoch(epoch)
+            # self.train_epoch(epoch)
+            self.validate(epoch)
 
         if self.args.use_tfboard:
             logger.close()

@@ -68,7 +68,8 @@ class Tester(object):
                                   'ANCHOR_RATIOS', '[0.5,1,2]']
         elif self.args.dataset == "pigs_voc":
             self.args.imdb_name = "pigs_voc_train"
-            self.args.imdbval_name = "pigs_voc_test"
+            self.args.imdbval_name = "pigs_voc_val"
+            self.args.imdbtest_name = "pigs_voc_test"
             self.args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]',
                                   'ANCHOR_RATIOS', '[0.5,1,2]',
                                   'MAX_NUM_GT_BOXES', '20']
@@ -342,7 +343,7 @@ class Tester(object):
         self.pickle_detections()
 
         logging.info('Evaluating detections')
-        self.imdb.evaluate_detections(self.all_boxes, self.output_dir)
+        self.imdb.evaluate_detections(self.all_boxes, self.output_dir, self.args.validate)
 
         end = time.time()
         logging.info("test time: %0.4fs" % (end - start))
