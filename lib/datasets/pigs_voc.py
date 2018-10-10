@@ -84,14 +84,14 @@ class pigs_voc(imdb):
         if path.exists(cache_file):
             with open(cache_file, 'rb') as fid:
                 roidb = pickle.load(fid)
-            logging.info(f"{self.name} gt roidb loaded from {cache_file}")
+            logging.debug(f"{self.name} gt roidb loaded from {cache_file}")
             return roidb
 
         gt_roidb = [self._load_annotation(path.basename(image_path))
                     for image_path in self._image_filepaths]
         with open(cache_file, 'wb') as fid:
             pickle.dump(gt_roidb, fid, pickle.HIGHEST_PROTOCOL)
-        logging.info(f"Wrote gt roidb to {cache_file}")
+        logging.debug(f"Wrote gt roidb to {cache_file}")
 
         return gt_roidb
 
@@ -171,7 +171,7 @@ class pigs_voc(imdb):
         for cls_ind, cls in enumerate(self.classes):
             if cls == '__background__':
                 continue
-            logging.info('Writing {} VOC results file'.format(cls))
+            logging.debug('Writing {} VOC results file'.format(cls))
             filename = self._get_voc_results_file_template().format(cls)
             with open(filename, 'wt') as f:
                 for im_ind, index in enumerate(self.image_index):
@@ -199,7 +199,7 @@ class pigs_voc(imdb):
         aps = []
         # The PASCAL VOC metric changed in 2010
         use_07_metric = True
-        logging.info('VOC07 metric? ' + ('Yes' if use_07_metric else 'No'))
+        logging.debug('VOC07 metric? ' + ('Yes' if use_07_metric else 'No'))
         if not os.path.isdir(output_dir):
             os.mkdir(output_dir)
         for i, cls in enumerate(self._classes):
@@ -210,15 +210,10 @@ class pigs_voc(imdb):
                 filename, annopath, imagesetfile, cls, cachedir, ovthresh=0.5,
                 use_07_metric=use_07_metric)
             aps += [ap]
-            logging.info('AP for {} = {:.4f}'.format(cls, ap))
+            logging.debug('AP for {} = {:.4f}'.format(cls, ap))
             with open(os.path.join(output_dir, cls + '_pr.pkl'), 'wb') as f:
                 pickle.dump({'rec': rec, 'prec': prec, 'ap': ap}, f)
         logging.info('Mean AP = {:.4f}'.format(np.mean(aps)))
-        logging.info('~~~~~~~~')
-        logging.info('Results:')
-        for ap in aps:
-            logging.info('{:.3f}'.format(ap))
-        logging.info('{:.3f}'.format(np.mean(aps)))
 
     def evaluate_detections(self, all_boxes, output_dir, validate):
         self._write_voc_results_file(all_boxes)

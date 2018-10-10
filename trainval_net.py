@@ -116,8 +116,8 @@ class Trainer(object):
 
         #torch.backends.cudnn.benchmark = True
         if torch.cuda.is_available() and not self.args.cuda:
-            logging.info("WARNING: You have a CUDA device, "+\
-                  "so you should probably run with --cuda")
+            logging.warning("You have a CUDA device, so you should probably "+\
+                            f"run with --cuda")
 
         # train set
         # Note: Use validation set and disable the flipped to enable faster
@@ -141,7 +141,7 @@ class Trainer(object):
 
         self.train_size = len(self.train_roidb)
 
-        logging.info(f'{len(self.train_roidb)} training roidb entries')
+        logging.debug(f'{len(self.train_roidb)} training roidb entries')
 
     def create_output_dir(self):
         output_dir = os.path.join(self.args.save_dir,
@@ -206,7 +206,7 @@ class Trainer(object):
             self.fasterRCNN = resnet(n_classes, 152, pretrained=True,
                                 class_agnostic=self.args.class_agnostic)
         else:
-            logging.info("network is not defined")
+            logging.error("network is not defined")
             pdb.set_trace()
 
         self.fasterRCNN.create_architecture()
@@ -246,7 +246,7 @@ class Trainer(object):
           'faster_rcnn_{}_{}_{}.pth'.format(self.args.checksession,
                                             self.args.checkepoch,
                                             self.args.checkpoint))
-        logging.info("loading checkpoint %s" % (load_name))
+        logging.debug("loading checkpoint %s" % (load_name))
         checkpoint = torch.load(load_name)
         self.args.session = checkpoint['session']
         self.args.start_epoch = checkpoint['epoch']
@@ -255,7 +255,7 @@ class Trainer(object):
         self.lr = optimizer.param_groups[0]['lr']
         if 'pooling_mode' in checkpoint.keys():
             cfg.POOLING_MODE = checkpoint['pooling_mode']
-        logging.info("loaded checkpoint %s" % (load_name))
+        logging.debug("loaded checkpoint %s" % (load_name))
 
     def reconfigure_fc_layer(self):
         """
@@ -344,21 +344,24 @@ class Trainer(object):
                       'loss_rcnn_cls': loss_rcnn_cls,
                       'loss_rcnn_box': loss_rcnn_box
                     }
-                    logger.add_scalars("logs_s_{}/losses".format(self.args.session),
-                                       info, (epoch - 1) * self.iters_per_epoch +\
+                    logger.add_scalars(f"logs_s_{self.args.session}/losses",
+                                       info,
+                                       (epoch - 1) * self.iters_per_epoch +\
                                        step)
 
                 loss_temp = 0
                 start = time.time()
 
 
-        save_name = os.path.join(self.output_dir, 'faster_rcnn_{}_{}_{}.pth'\
-                                             .format(self.args.session, epoch, step))
+        save_name = os.path.join(self.output_dir,
+                                 f'faster_rcnn_{self.args.session}_{epoch}_'+\
+                                 f'{step}.pth')
         save_checkpoint({
           'session': self.args.session,
           'epoch': epoch + 1,
-          'model': self.fasterRCNN.module.state_dict() if self.args.mGPUs \
-                                                  else self.fasterRCNN.state_dict(),
+          'model': self.fasterRCNN.module.state_dict() \
+                   if self.args.mGPUs \
+                   else self.fasterRCNN.state_dict(),
           'self.optimizer': self.optimizer.state_dict(),
           'pooling_mode': cfg.POOLING_MODE,
           'class_agnostic': self.args.class_agnostic,
@@ -383,6 +386,7 @@ class Trainer(object):
             assert self.args.resume_classes is not None,\
                    "resume_classes must have a value when transfer learning"
 
+        logging.info("Loading data and configuring network")
         self.set_data_names()
         self.set_config()
         self.setup_data()
@@ -409,11 +413,10 @@ class Trainer(object):
             from tensorboardX import SummaryWriter
             logger = SummaryWriter("logs")
 
-        logging.info("##############")
-        logging.info("Begin Training")
-        logging.info("##############")
         for epoch in range(self.args.start_epoch, self.args.max_epochs + 1):
-            # self.train_epoch(epoch)
+            logging.info(f"Training epoch {epoch}")
+            self.train_epoch(epoch)
+            logging.info(f"Validating epoch {epoch}")
             self.validate(epoch)
 
         if self.args.use_tfboard:
@@ -530,12 +533,12 @@ if __name__ == '__main__':
 
     verbosity = "DEBUG" if cli_args.verbose else "INFO"
     coloredlogs.install(level=verbosity,
-                        format="%(asctime)s %(levelname)s %(module)s" + \
-                               "- %(funcName)s: %(message)s",
+                        fmt="%(asctime)s %(levelname)s %(module)s" + \
+                            "- %(funcName)s: %(message)s",
                         datefmt="%Y-%m-%d %H:%M:%S")
 
-    logging.info('Called with args:')
-    logging.info(cli_args)
+    logging.debug('Called with args:')
+    logging.debug(cli_args)
 
     trainer = Trainer(cli_args, cli=True)
     trainer.train()

@@ -110,7 +110,7 @@ class Tester(object):
         if self.args.set_cfgs is not None:
             cfg_from_list(self.args.set_cfgs)
 
-        logging.info('Using config:')
+        logging.debug('Using config:')
         pprint.pformat(cfg)
 
         cfg.TRAIN.USE_FLIPPED = False
@@ -120,7 +120,7 @@ class Tester(object):
                 combined_roidb(self.args.imdbval_name, False)
         self.imdb.competition_mode(on=True)
 
-        logging.info('{:d} roidb entries'.format(len(self.roidb)))
+        logging.debug('{:d} roidb entries'.format(len(self.roidb)))
 
     def create_input_dir(self):
         self.input_dir = os.path.join(self.args.load_dir,
@@ -338,15 +338,15 @@ class Tester(object):
 
         start = time.time()
 
-        logging.info(f"Processing image set {self.imdb._name}")
+        logging.debug(f"Processing image set {self.imdb._name}")
         self.evaluate_all_images()
         self.pickle_detections()
 
-        logging.info('Evaluating detections')
+        logging.debug('Evaluating detections')
         self.imdb.evaluate_detections(self.all_boxes, self.output_dir, self.args.validate)
 
         end = time.time()
-        logging.info("test time: %0.4fs" % (end - start))
+        logging.debug("test time: %0.4fs" % (end - start))
 
 def build_parser():
     """
