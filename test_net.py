@@ -245,13 +245,16 @@ class Tester(object):
             if cfg.TRAIN.BBOX_NORMALIZE_TARGETS_PRECOMPUTED:
             # Optionally normalize targets by a precomputed mean and stdev
                 if self.args.class_agnostic:
-                    box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
-                               + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
+                    box_deltas = box_deltas.view(-1, 4) * \
+                     torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() +\
+                     torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
                     box_deltas = box_deltas.view(1, -1, 4)
                 else:
-                    box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
-                               + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
-                    box_deltas = box_deltas.view(1, -1, 4 * len(self.imdb.classes))
+                    box_deltas = box_deltas.view(-1, 4) * \
+                     torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() +\
+                     torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
+                    box_deltas = box_deltas.view(1, -1, 4 * \
+                                 len(self.imdb.classes))
 
             pred_boxes = bbox_transform_inv(boxes, box_deltas, 1)
             pred_boxes = clip_boxes(pred_boxes, self.im_info.data, 1)
@@ -286,7 +289,10 @@ class Tester(object):
                 keep = nms(cls_dets, cfg.TEST.NMS)
                 cls_dets = cls_dets[keep.view(-1).long()]
                 if self.vis:
-                    im2show = self.vis_detections(im2show, self.imdb.classes[j], cls_dets.cpu().numpy(), 0.3)
+                    im2show = self.vis_detections(im2show,
+                                                  self.imdb.classes[j],
+                                                  cls_dets.cpu().numpy(),
+                                                  0.3)
                 self.all_boxes[j][i] = cls_dets.cpu().numpy()
             else:
                 self.all_boxes[j][i] = empty_array
@@ -294,11 +300,13 @@ class Tester(object):
         # Limit to self.max_per_image detections *over all classes*
         if self.max_per_image > 0:
             image_scores = np.hstack([self.all_boxes[j][i][:, -1]
-                                      for j in xrange(1, self.imdb.num_classes)])
+                                      for j in xrange(1,
+                                                      self.imdb.num_classes)])
             if len(image_scores) > self.max_per_image:
                 image_thresh = np.sort(image_scores)[-self.max_per_image]
                 for j in xrange(1, self.imdb.num_classes):
-                    keep = np.where(self.all_boxes[j][i][:, -1] >= image_thresh)[0]
+                    keep = np.where(self.all_boxes[j][i][:, -1] >=\
+                                    image_thresh)[0]
                     self.all_boxes[j][i] = self.all_boxes[j][i][keep, :]
 
         misc_toc = time.time()
@@ -343,7 +351,9 @@ class Tester(object):
         self.pickle_detections()
 
         logging.debug('Evaluating detections')
-        self.imdb.evaluate_detections(self.all_boxes, self.output_dir, self.args.validate)
+        self.imdb.evaluate_detections(self.all_boxes,
+                                      self.output_dir,
+                                      self.args.validate)
 
         end = time.time()
         logging.debug("test time: %0.4fs" % (end - start))
@@ -381,7 +391,8 @@ def build_parser():
                         help='whether perform class_agnostic bbox regression',
                         action='store_true')
     parser.add_argument('--parallel_type', dest='parallel_type',
-                        help='which part of model to parallel, 0: all, 1: model before roi pooling',
+                        help='which part of model to parallel, 0: all, '+\
+                             '1: model before roi pooling',
                         default=0, type=int)
     parser.add_argument('--checksession', dest='checksession',
                         help='checksession to load model',
