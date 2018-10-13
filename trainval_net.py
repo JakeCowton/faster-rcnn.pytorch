@@ -379,6 +379,17 @@ class Trainer(object):
                             "validate": True})
         val_resul = validator.test()
 
+    def test(self):
+        tester = Tester({"dataset": self.args.dataset,
+                         "net": self.args.net,
+                         "load_dir": self.args.save_dir,
+                         "cuda": self.args.cuda,
+                         "checksession": self.args.session,
+                         "checkepoch": self.args.max_epochs,
+                         "checkpoint": self.iters_per_epoch-1,
+                         "validate": False})
+        test_result = tester.test()
+
     def train(self):
         if self.args.transfer:
             assert self.args.resume == True,\
@@ -418,6 +429,8 @@ class Trainer(object):
             self.train_epoch(epoch)
             logging.info(f"Validating epoch {epoch}")
             self.validate(epoch)
+            logging.info(f"Testing using the final test set")
+            self.test()
 
         if self.args.use_tfboard:
             logger.close()

@@ -117,7 +117,7 @@ class Tester(object):
 
     def setup_data(self):
         self.imdb, self.roidb, self.ratio_list, self.ratio_index = \
-                combined_roidb(self.args.imdbval_name, False)
+                combined_roidb(self.data_to_read, False)
         self.imdb.competition_mode(on=True)
 
         logging.debug('{:d} roidb entries'.format(len(self.roidb)))
@@ -337,6 +337,9 @@ class Tester(object):
 
     def test(self):
         self.set_data_names()
+        self.data_to_read = self.args.imdbval_name \
+                            if self.args.validate is True \
+                            else self.args.imdbtest_name
         self.set_config()
         self.setup_data()
         self.create_input_dir()
