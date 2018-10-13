@@ -252,7 +252,7 @@ class Trainer(object):
         self.args.start_epoch = checkpoint['epoch']
         self.fasterRCNN.load_state_dict(checkpoint['model'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
-        self.lr = optimizer.param_groups[0]['lr']
+        self.lr = self.optimizer.param_groups[0]['lr']
         if 'pooling_mode' in checkpoint.keys():
             cfg.POOLING_MODE = checkpoint['pooling_mode']
         logging.debug("loaded checkpoint %s" % (load_name))
@@ -362,7 +362,7 @@ class Trainer(object):
           'model': self.fasterRCNN.module.state_dict() \
                    if self.args.mGPUs \
                    else self.fasterRCNN.state_dict(),
-          'self.optimizer': self.optimizer.state_dict(),
+          'optimizer': self.optimizer.state_dict(),
           'pooling_mode': cfg.POOLING_MODE,
           'class_agnostic': self.args.class_agnostic,
         }, save_name)
