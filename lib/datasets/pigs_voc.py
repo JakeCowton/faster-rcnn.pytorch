@@ -67,11 +67,8 @@ class pigs_voc(imdb):
         """
         Only return images that have corresponding XML files
         """
-        # filepaths = [path.join(self._img_root, self._img_jpg_folder, fn)\
-                     # for fn in self._get_image_names()]
         filepaths = [path.join(self._img_root, self._img_jpg_folder, fn)\
-                     for fn in sorted(listdir(path.join(
-                                      self._img_root, self._img_jpg_folder)))]
+                     for fn in self._get_image_names()]
         return filepaths
 
     def gt_roidb(self):
@@ -180,7 +177,7 @@ class pigs_voc(imdb):
                         continue
                     # the VOCdevkit expects 1-based indices
                     for k in range(dets.shape[0]):
-                        fn = os.path.basename(self.image_path_at(index))[:-4]
+                        fn = os.path.basename(self.image_path_at(im_ind))[:-4]
                         f.write('{:s} {:.3f} {:.1f} {:.1f} {:.1f} {:.1f}\n'.
                                 format(fn, dets[k, -1],
                                        dets[k, 0] + 1, dets[k, 1] + 1,
