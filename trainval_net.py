@@ -550,7 +550,8 @@ def build_parser():
 
     parser.add_argument('--log_path', dest="log_path",
                         help="Path to folder for log file",
-                        default=os.path.join(f"logs/{datetime.now()}.log"))
+                        default=os.path.join(f"logs/"+\
+                                f"{str(datetime.now()).replace(' ', '_')}"))
 
     parser.add_argument('--ovthresh', dest="ovthresh", type=float,
                         help="Threhsold of overlap for correct BB", default=0.5)
@@ -578,8 +579,9 @@ if __name__ == '__main__':
                                 "- %(funcName)s: %(message)s",
                             datefmt="%Y-%m-%d %H:%M:%S")
     else:
+        os.makedirs(cli_args.log_path)
         verbosity = logging.DEBUG if cli_args.verbose else logging.INFO
-        logging.basicConfig(filename=cli_args.log_path.replace(" ", "_"),
+        logging.basicConfig(filename=os.path.join(cli_args.log_path, "log.log"),
                             level=verbosity,
                             format="%(asctime)s %(levelname)s %(module)s" +
                             "- %(funcName)s: %(message)s",
