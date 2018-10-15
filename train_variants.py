@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from multiprocessing import cpu_count
 
 import torch
 
@@ -7,7 +8,7 @@ from trainval_net import Trainer
 
 
 class TrainVariants(object):
-    def __init__(self, epochs, bs, nw=1, mGPUs=1):
+    def __init__(self, epochs, bs, nw=cpu_count(), mGPUs=1):
         self.epochs = epochs
         self.nw = nw
         self.mGPUs = mGPUs
@@ -104,4 +105,4 @@ if __name__ == "__main__":
                             "- %(funcName)s: %(message)s",
                         datefmt="%Y-%m-%d %H:%M:%S")
 
-    TrainVariants(epochs=100, bs=8).run()
+    TrainVariants(epochs=20, bs=8).run()
