@@ -261,13 +261,26 @@ class Trainer(object):
 
     def reconfigure_fc_layer(self):
         """
-        Reconfigure the FC layer to the new datasets number of classes
+        Reconfigure the FC layers to the new datasets number of classes
         2048 is the output from the previous layer
+
+        `RCNN_cls_score` is the number of new classes
+        `RCNN_bbox_pred` is the number of new classes * 4 (the number of points
+                         needed to describe a Bounding Box
         """
+        logging.warning(f"Modifying class labels layer from "+\
+                        f"{self.args.resume_classes} classes to "+\
+                        f"{self.train_imdb.num_classes}")
         self.fasterRCNN.RCNN_cls_score = nn.Linear(2048,
                                                    self.train_imdb.num_classes)
+
+        logging.warning(f"Modifying class bboxes layer from "+\
+                        f"{self.args.resume_classes*4} classes to "+\
+                        f"{self.train_imdb.num_classes*4}")
+        self.fasterRCNN.RCNN_bbox_pred = nn.Linear(2048,
+                                                  self.train_imdb.num_classes*4)
         if self.args.cuda:
-            fasterRCNN.cuda()
+            self.fasterRCNN.cuda()
 
     def train_epoch(self, epoch):
         # setting to train mode
