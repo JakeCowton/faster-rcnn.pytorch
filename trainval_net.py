@@ -431,8 +431,8 @@ class Trainer(object):
             self.train_epoch(epoch)
             logging.info(f"Validating epoch {epoch}")
             self.validate(epoch)
-            logging.info(f"Testing using the final test set")
-            self.test()
+        logging.info(f"Testing using the final test set")
+        self.test()
 
         if self.args.use_tfboard:
             logger.close()
