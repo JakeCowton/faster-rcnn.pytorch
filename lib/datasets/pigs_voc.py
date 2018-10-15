@@ -211,13 +211,16 @@ class pigs_voc(imdb):
             with open(os.path.join(output_dir, cls + '_pr.pkl'), 'wb') as f:
                 pickle.dump({'rec': rec, 'prec': prec, 'ap': ap}, f)
         logging.info('Mean AP = {:.4f}'.format(np.mean(aps)))
+        return aps
 
     def evaluate_detections(self, all_boxes, output_dir, validate, ovthresh):
         self._write_voc_results_file(all_boxes)
-        self._do_python_eval(output_dir, validate, ovthresh)
+        aps = self._do_python_eval(output_dir, validate, ovthresh)
         if self.config['cleanup']:
             for cls in self._classes:
                 if cls == '__background__':
                     continue
                 filename = self._get_voc_results_file_template().format(cls)
                 os.remove(filename)
+
+        return aps

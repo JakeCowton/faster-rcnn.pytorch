@@ -60,6 +60,20 @@ class Trainer(object):
             self.args = DictToArgs(default_args)
         else:
             self.args = args
+    def check_transfer_args(self):
+        if self.args.transfer:
+            assert self.args.resume == True,\
+                   "Resume must be true when transfer learning"
+            assert self.args.resume_classes is not None,\
+                   "resume_classes must have a value when transfer learning"
+            assert self.args.resume_dataset is not None,\
+                   "resume_dataset must have a value when transfer learning"
+
+    def create_performance_file(self):
+        if not self.args.terminal_logging:
+            with open(os.path.join(self.args.log_path,
+                                   "performance.csv"),"w") as f:
+                f.write("datetime,stage,epoch,score\n")
 
     def set_data_names(self):
         if self.args.dataset == "pascal_voc":
@@ -101,7 +115,6 @@ class Trainer(object):
             self.args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]',
                                   'ANCHOR_RATIOS', '[0.5,1,2]',
                                   'MAX_NUM_GT_BOXES', '50']
-
     def set_config(self):
         self.args.cfg_file = "cfgs/{}_ls.yml".format(self.args.net) \
                         if self.args.large_scale \
@@ -392,7 +405,8 @@ class Trainer(object):
                             "checkepoch": epoch,
                             "checkpoint": self.iters_per_epoch-1,
                             "validate": True})
-        val_resul = validator.test(self.args.ovthresh)
+        val_result = validator.test(self.args.ovthresh)
+        return val_result
 
     def test(self):
         tester = Tester({"dataset": self.args.dataset,
@@ -404,14 +418,17 @@ class Trainer(object):
                          "checkpoint": self.iters_per_epoch-1,
                          "validate": False})
         test_result = tester.test(self.args.ovthresh)
+        return test_result
+
+    def write_result_to_file(self, res, epoch, stage="val"):
+        if not self.args.terminal_logging:
+            with open(os.path.join(self.args.log_path,
+                                   "performance.csv"),"a") as f:
+                f.write(f"{datetime.now()},{stage},{epoch},{np.mean(res)}\n")
 
     def train(self):
-        if self.args.transfer:
-            assert self.args.resume == True,\
-                   "Resume must be true when transfer learning"
-            assert self.args.resume_classes is not None,\
-                   "resume_classes must have a value when transfer learning"
-
+        self.check_transfer_args()
+        self.create_performance_file()
         logging.info("Loading data and configuring network")
         self.set_data_names()
         self.set_config()
@@ -443,9 +460,11 @@ class Trainer(object):
             logging.info(f"Training epoch {epoch}")
             self.train_epoch(epoch)
             logging.info(f"Validating epoch {epoch}")
-            self.validate(epoch)
+            val_result = self.validate(epoch)
+            self.write_result_to_file(val_result, epoch, "val")
         logging.info(f"Testing using the final test set")
-        self.test()
+        test_result = self.test()
+        self.write_result_to_file(test_result, epoch, "test")
 
         if self.args.use_tfboard:
             logger.close()

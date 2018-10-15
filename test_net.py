@@ -361,13 +361,15 @@ class Tester(object):
         self.pickle_detections()
 
         logging.debug('Evaluating detections')
-        self.imdb.evaluate_detections(self.all_boxes,
-                                      self.output_dir,
-                                      self.args.validate,
-                                      ovthresh)
+        res = self.imdb.evaluate_detections(self.all_boxes,
+                                            self.output_dir,
+                                            self.args.validate,
+                                            ovthresh)
 
         end = time.time()
         logging.debug("test time: %0.4fs" % (end - start))
+
+        return res
 
 def build_parser():
     """
