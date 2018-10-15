@@ -485,9 +485,11 @@ class Trainer(object):
             logging.info(f"Validating epoch {epoch}")
             val_result = self.validate(epoch)
             self.write_result_to_file(val_result, epoch, "val")
-        logging.info(f"Testing using the final test set")
-        test_result = self.test()
-        self.write_result_to_file(test_result, epoch, "test")
+
+        if self.args.and_test:
+            logging.info(f"Testing using the final test set")
+            test_result = self.test()
+            self.write_result_to_file(test_result, epoch, "test")
 
         if self.args.use_tfboard:
             logger.close()
@@ -594,9 +596,12 @@ def build_parser():
                         help="Path to folder for log file",
                         default=os.path.join(f"logs/"+\
                                 f"{str(datetime.now()).replace(' ', '_')}"))
-
+    # Testing params
     parser.add_argument('--ovthresh', dest="ovthresh", type=float,
                         help="Threhsold of overlap for correct BB", default=0.5)
+
+    parser.add_argument('--and_test', dest="and_test", action="store_true",
+                        help="Whether to do the final test run", default=False)
 
 
 
