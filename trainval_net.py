@@ -17,6 +17,8 @@ import pdb
 import time
 import logging
 
+from datetime import datetime
+
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
@@ -530,6 +532,14 @@ def build_parser():
     parser.add_argument('-v', dest="verbose", help="Use debug statements",
                         action="store_true")
 
+    parser.add_argument('-c', dest="terminal_logging",
+                        help="Log to terminal", action="store_true")
+
+    parser.add_argument('--log_path', dest="log_path",
+                        help="Path to folder for log file",
+                        default=os.path.join(f"logs/{datetime.now()}.log"))
+
+
     return parser
 
 if __name__ == '__main__':
@@ -544,11 +554,19 @@ if __name__ == '__main__':
 
     cli_args = parse_args()
 
-    verbosity = "DEBUG" if cli_args.verbose else "INFO"
-    coloredlogs.install(level=verbosity,
-                        fmt="%(asctime)s %(levelname)s %(module)s" + \
+    if cli_args.terminal_logging is True:
+        verbosity = "DEBUG" if cli_args.verbose else "INFO"
+        coloredlogs.install(level=verbosity,
+                            fmt="%(asctime)s %(levelname)s %(module)s" + \
+                                "- %(funcName)s: %(message)s",
+                            datefmt="%Y-%m-%d %H:%M:%S")
+    else:
+        verbosity = logging.DEBUG if cli_args.verbose else logging.INFO
+        logging.basicConfig(filename=cli_args.log_path.replace(" ", "_"),
+                            level=verbosity,
+                            format="%(asctime)s %(levelname)s %(module)s" +
                             "- %(funcName)s: %(message)s",
-                        datefmt="%Y-%m-%d %H:%M:%S")
+                            datefmt="%Y-%m-%d %H:%M:%S")
 
     logging.debug('Called with args:')
     logging.debug(cli_args)
