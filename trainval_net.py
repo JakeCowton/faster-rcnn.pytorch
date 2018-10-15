@@ -226,7 +226,6 @@ class Trainer(object):
 
         self.fasterRCNN.create_architecture()
 
-        selflr = cfg.TRAIN.LEARNING_RATE
         self.lr = self.args.lr
         #tr_momentum = cfg.TRAIN.MOMENTUM
         #tr_momentum = self.args.momentum
@@ -292,6 +291,30 @@ class Trainer(object):
                         f"{self.train_imdb.num_classes*4}")
         self.fasterRCNN.RCNN_bbox_pred = nn.Linear(2048,
                                                   self.train_imdb.num_classes*4)
+
+        self.lr = self.args.lr
+
+        params = []
+        for key, value in dict(self.fasterRCNN.named_parameters()).items():
+            if value.requires_grad:
+                if 'bias' in key:
+                    params += [{'params':[value],
+                                'lr':self.lr*(cfg.TRAIN.DOUBLE_BIAS + 1),
+                                'weight_decay': cfg.TRAIN.BIAS_DECAY and \
+                                                cfg.TRAIN.WEIGHT_DECAY or 0}]
+                else:
+                    params += [{'params':[value],
+                                'lr':self.lr,
+                                'weight_decay': cfg.TRAIN.WEIGHT_DECAY}]
+
+        if self.args.optimizer == "adam":
+            self.lr = self.lr * 0.1
+            self.optimizer = torch.optim.Adam(params)
+
+        elif self.args.optimizer == "sgd":
+            self.optimizer = torch.optim.SGD(params,
+                                              momentum=cfg.TRAIN.MOMENTUM)
+
         if self.args.cuda:
             self.fasterRCNN.cuda()
 
