@@ -183,7 +183,7 @@ class pigs_voc(imdb):
                                        dets[k, 0] + 1, dets[k, 1] + 1,
                                        dets[k, 2] + 1, dets[k, 3] + 1))
 
-    def _do_python_eval(self, output_dir='output', validate=False):
+    def _do_python_eval(self, output_dir='output', validate=False, ovthresh=0.5):
         # Path to annotations folder
         annopath = os.path.join(self._img_root, self._img_annotation_folder,
                                 '{:s}.xml')
@@ -204,17 +204,17 @@ class pigs_voc(imdb):
                 continue
             filename = self._get_voc_results_file_template().format(cls)
             rec, prec, ap = voc_eval(
-                filename, annopath, imagesetfile, cls, cachedir, ovthresh=0.5,
-                use_07_metric=use_07_metric)
+                filename, annopath, imagesetfile, cls, cachedir,
+                ovthresh=ovthresh, use_07_metric=use_07_metric)
             aps += [ap]
             logging.debug('AP for {} = {:.4f}'.format(cls, ap))
             with open(os.path.join(output_dir, cls + '_pr.pkl'), 'wb') as f:
                 pickle.dump({'rec': rec, 'prec': prec, 'ap': ap}, f)
         logging.info('Mean AP = {:.4f}'.format(np.mean(aps)))
 
-    def evaluate_detections(self, all_boxes, output_dir, validate):
+    def evaluate_detections(self, all_boxes, output_dir, validate, ovthresh):
         self._write_voc_results_file(all_boxes)
-        self._do_python_eval(output_dir, validate)
+        self._do_python_eval(output_dir, validate, ovthresh)
         if self.config['cleanup']:
             for cls in self._classes:
                 if cls == '__background__':

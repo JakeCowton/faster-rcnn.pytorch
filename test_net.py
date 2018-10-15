@@ -335,11 +335,18 @@ class Tester(object):
         with open(det_file, 'wb') as f:
             pickle.dump(self.all_boxes, f, pickle.HIGHEST_PROTOCOL)
 
-    def test(self):
+    def test(self, ovthresh=0.5):
         self.set_data_names()
         self.data_to_read = self.args.imdbval_name \
                             if self.args.validate is True \
                             else self.args.imdbtest_name
+        if self.args.validate is True:
+            self.data_to_read = self.args.imdbval_name
+            logging.debug(f"Validating with ovthresh = {ovthresh}")
+        else:
+            self.data_to_read = self.args.imdbtest_name
+            logging.debug(f"Testing with ovthresh = {ovthresh}")
+
         self.set_config()
         self.setup_data()
         self.create_input_dir()
@@ -356,7 +363,8 @@ class Tester(object):
         logging.debug('Evaluating detections')
         self.imdb.evaluate_detections(self.all_boxes,
                                       self.output_dir,
-                                      self.args.validate)
+                                      self.args.validate,
+                                      ovthresh)
 
         end = time.time()
         logging.debug("test time: %0.4fs" % (end - start))

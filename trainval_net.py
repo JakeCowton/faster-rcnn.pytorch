@@ -392,7 +392,7 @@ class Trainer(object):
                             "checkepoch": epoch,
                             "checkpoint": self.iters_per_epoch-1,
                             "validate": True})
-        val_resul = validator.test()
+        val_resul = validator.test(self.args.ovthresh)
 
     def test(self):
         tester = Tester({"dataset": self.args.dataset,
@@ -403,7 +403,7 @@ class Trainer(object):
                          "checkepoch": self.args.max_epochs,
                          "checkpoint": self.iters_per_epoch-1,
                          "validate": False})
-        test_result = tester.test()
+        test_result = tester.test(self.args.ovthresh)
 
     def train(self):
         if self.args.transfer:
@@ -551,6 +551,10 @@ def build_parser():
     parser.add_argument('--log_path', dest="log_path",
                         help="Path to folder for log file",
                         default=os.path.join(f"logs/{datetime.now()}.log"))
+
+    parser.add_argument('--ovthresh', dest="ovthresh", type=float,
+                        help="Threhsold of overlap for correct BB", default=0.5)
+
 
 
     return parser
