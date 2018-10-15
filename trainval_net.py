@@ -51,6 +51,7 @@ class Trainer(object):
         """
         self.cli = cli
         self.build_args(args)
+        os.makedirs(self.args.log_path, exist_ok=True)
 
     def build_args(self, args):
         # Build an args object if not inputs from a CLI
