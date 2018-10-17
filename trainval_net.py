@@ -53,6 +53,7 @@ class Trainer(object):
         self.build_args(args)
         os.makedirs(self.args.log_path, exist_ok=True)
 
+
     def build_args(self, args):
         # Build an args object if not inputs from a CLI
         if not self.cli:
@@ -128,7 +129,14 @@ class Trainer(object):
 
         logging.debug('Using config:')
         logging.debug(pprint.pformat(cfg))
-        np.random.seed(cfg.RNG_SEED)
+
+        if self.args.is_optimising is True:
+            seed = 1234
+            logging.debug(f"Using random seed {seed}")
+            import random
+            random.seed(seed)
+            np.random.seed(seed)
+            torch.manual_seed(seed)
 
         #torch.backends.cudnn.benchmark = True
         if torch.cuda.is_available() and not self.args.cuda:
@@ -551,6 +559,9 @@ def build_parser():
     parser.add_argument('--lr_decay_gamma', dest='lr_decay_gamma',
                         help='learning rate decay ratio',
                         default=0.1, type=float)
+    parser.add_argument('--optimising', dest='is_optimising',
+                        help='Whether to use random seeds or not',
+                        action="store_true")
 
     # set training session
     parser.add_argument('--session', dest='session',

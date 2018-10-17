@@ -33,6 +33,7 @@ class TrainVariants(object):
                                   "mGPUs": self.mGPUs,
                                   "session": session,
                                   "log_path": f"logs/pascal_voc_{session}",
+                                  "optimising": True,
                                  })
         trained_pascal.train()
 
@@ -54,6 +55,7 @@ class TrainVariants(object):
                                 "transfer": True,
                                 "resume_classes": 21,
                                 "log_path": f"logs/pascal_pigs_voc_{session}",
+                                "optimising": True,
                                })
         trained_pigs.train()
 
@@ -70,6 +72,7 @@ class TrainVariants(object):
                                   "mGPUs": self.mGPUs,
                                   "session": session,
                                   "log_path": f"logs/pigs_voc_{session}",
+                                  "optimising": True,
                                  })
         trained_pigs.train()
 
@@ -88,6 +91,7 @@ class TrainVariants(object):
                                            "cag": True,
                                            "log_path":
                                               f"logs/pascal_agnostic_{session}",
+                                           "optimising": True,
                                           })
         trained_pascal_agnostic.train()
 
