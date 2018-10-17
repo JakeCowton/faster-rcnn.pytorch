@@ -10,6 +10,7 @@ from trainval_net import Trainer
 class TrainVariants(object):
     def __init__(self, epochs, bs, nw=cpu_count(), mGPUs=1):
         self.epochs = epochs
+        self.bs = bs
         self.nw = nw
         self.mGPUs = mGPUs
         self.cuda = torch.cuda.is_available()
@@ -26,6 +27,7 @@ class TrainVariants(object):
                                   "net": "res101",
                                   "epochs": self.epochs,
                                   "disp_interval": 100,
+                                  "bs": self.bs,
                                   "nw": self.nw,
                                   "cuda": True,
                                   "mGPUs": self.mGPUs,
@@ -43,12 +45,12 @@ class TrainVariants(object):
                                 "nw": self.nw,
                                 "cuda": True,
                                 "mGPUs": self.mGPUs,
-                                "session": ipp_session,
+                                "session": session,
                                 "resume": True,
-                                "checksession": ipp_session,
+                                "checksession": session,
                                 "checkepoch": self.epochs,
-                                "checkpoint": 1251,
-                                "resume_data": "pascal_voc",
+                                "checkpoint": 10021,
+                                "resume_dataset": "pascal_voc",
                                 "transfer": True,
                                 "resume_classes": 21,
                                 "log_path": f"logs/pascal_pigs_voc_{session}",
@@ -62,6 +64,7 @@ class TrainVariants(object):
                                   "net": "res101",
                                   "epochs": self.epochs,
                                   "disp_interval": 10,
+                                  "bs": self.bs,
                                   "nw": self.nw,
                                   "cuda": True,
                                   "mGPUs": self.mGPUs,
@@ -77,6 +80,7 @@ class TrainVariants(object):
                                            "net": "res101",
                                            "epochs": self.epochs,
                                            "disp_interval": 100,
+                                           "bs": self.bs,
                                            "nw": self.nw,
                                            "cuda": True,
                                            "mGPUs": self.mGPUs,
