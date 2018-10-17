@@ -86,7 +86,8 @@ class TrainVariants(object):
                                            "mGPUs": self.mGPUs,
                                            "session": session,
                                            "cag": True,
-                                           "log_path": f"logs/pascal_agnostic_{session}",
+                                           "log_path":
+                                              f"logs/pascal_agnostic_{session}",
                                           })
         trained_pascal_agnostic.train()
 
@@ -109,4 +110,4 @@ if __name__ == "__main__":
                             "- %(funcName)s: %(message)s",
                         datefmt="%Y-%m-%d %H:%M:%S")
 
-    TrainVariants(epochs=20, bs=8).run()
+    TrainVariants(epochs=15, bs=8).run()
