@@ -489,7 +489,7 @@ class Trainer(object):
             logger = SummaryWriter("logs")
 
         for epoch in range(self.args.start_epoch, self.args.max_epochs + 1):
-            logging.info(f"Training epoch {epoch}")
+            logging.info(f"Training epoch {epoch} of {self.args.max_epochs}")
             self.train_epoch(epoch)
             logging.info(f"Validating epoch {epoch}")
             val_result = self.validate(epoch)
