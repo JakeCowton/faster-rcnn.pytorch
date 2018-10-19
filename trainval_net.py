@@ -80,31 +80,26 @@ class Trainer(object):
     def set_data_names(self):
         if self.args.dataset == "pascal_voc":
             self.args.imdb_name = "voc_2007_trainval"
-            self.args.imdbval_name = "voc_2007_test"
             self.args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]',
                                   'ANCHOR_RATIOS', '[0.5,1,2]',
                                   'MAX_NUM_GT_BOXES', '20']
         elif self.args.dataset == "pigs_voc":
             self.args.imdb_name = "pigs_voc_train"
-            self.args.imdbval_name = "pigs_voc_train"
             self.args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]',
                                   'ANCHOR_RATIOS', '[0.5,1,2]',
                                   'MAX_NUM_GT_BOXES', '20']
         elif self.args.dataset == "pascal_voc_0712":
             self.args.imdb_name = "voc_2007_trainval+voc_2012_trainval"
-            self.args.imdbval_name = "voc_2007_test"
             self.args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]',
                                   'ANCHOR_RATIOS', '[0.5,1,2]',
                                   'MAX_NUM_GT_BOXES', '20']
         elif self.args.dataset == "coco":
             self.args.imdb_name = "coco_2014_train+coco_2014_valminusminival"
-            self.args.imdbval_name = "coco_2014_minival"
             self.args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]',
                                   'ANCHOR_RATIOS', '[0.5,1,2]',
                                   'MAX_NUM_GT_BOXES', '50']
         elif self.args.dataset == "imagenet":
             self.args.imdb_name = "imagenet_train"
-            self.args.imdbval_name = "imagenet_val"
             self.args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]',
                                   'ANCHOR_RATIOS', '[0.5,1,2]',
                                   'MAX_NUM_GT_BOXES', '30']
@@ -113,7 +108,6 @@ class Trainer(object):
             # train scale: ['150-50-20','150-50-50','500-150-80', '750-250-150',
             # '1750-700-450', '1600-400-20']
             self.args.imdb_name = "vg_150-50-50_minitrain"
-            self.args.imdbval_name = "vg_150-50-50_minival"
             self.args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]',
                                   'ANCHOR_RATIOS', '[0.5,1,2]',
                                   'MAX_NUM_GT_BOXES', '50']
