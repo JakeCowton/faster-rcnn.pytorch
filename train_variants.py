@@ -15,13 +15,12 @@ class TrainVariants(object):
         self.mGPUs = mGPUs
         self.cuda = torch.cuda.is_available()
 
-    def generate_session(self, i):
+    def get_dt(self):
         dt = datetime.now().strftime("%y%m%d")
-        session = f"{dt}{i}"
-        return session
+        return dt
 
-    def inet_pascal_pigs(self):
-        session = self.generate_session(1)
+    def inet_pascal_pigs(self, dt):
+        session = f"{dt}_1"
         logging.info(f"[{session}] Training on Pascal VOC")
         trained_pascal = Trainer({"dataset": "pascal_voc",
                                   "net": "res101",
@@ -60,8 +59,8 @@ class TrainVariants(object):
                                })
         trained_pigs.train()
 
-    def inet_pigs(self):
-        session = self.generate_session(2)
+    def inet_pigs(self, dt):
+        session = f"{dt}_2"
         logging.info(f"[{session}] Training on Pigs VOC")
         trained_pigs = Trainer({"dataset": "pigs_voc",
                                   "net": "res101",
@@ -78,10 +77,10 @@ class TrainVariants(object):
                                  })
         trained_pigs.train()
 
-    def inet_pascal(self):
-        session = self.generate_session(3)
+    def inet_pascal(self, dt):
+        session = f"{dt}_3"
         logging.info(f"[{session}] Training on Pigs VOC")
-        trained_pascal_agnostic = Trainer({"dataset": "pascal_voc_agnostic",
+        trained_pascal_agnostic = Trainer({"dataset": "pascal_pigs",
                                            "net": "res101",
                                            "max_epochs": self.epochs,
                                            "disp_interval": 100,
@@ -105,16 +104,23 @@ class TrainVariants(object):
         - ImageNet/PigsVOC
         - ImageNet/PascalVOC (class agnostic)
         """
-        self.inet_pigs()
-        self.inet_pascal_pigs()
-        # self.inet_pascal()
+        dt = self.get_dt()
+        self.inet_pascal(dt)
+        self.inet_pigs(dt)
+        self.inet_pascal_pigs(dt)
 
 
 if __name__ == "__main__":
-    import coloredlogs
-    coloredlogs.install(level="DEBUG",
-                        fmt="%(asctime)s %(levelname)s %(module)s" + \
-                            "- %(funcName)s: %(message)s",
+    # import coloredlogs
+    # coloredlogs.install(level="DEBUG",
+                        # fmt="%(asctime)s %(levelname)s %(module)s" + \
+                            # "- %(funcName)s: %(message)s",
+                        # datefmt="%Y-%m-%d %H:%M:%S")
+
+    logging.basicConfig(filename=f"./logs/{datetime.now()}_variants.log",
+                        level=logging.DEBUG,
+                        format="%(asctime)s %(levelname)s %(module)s" +
+                        "- %(funcName)s: %(message)s",
                         datefmt="%Y-%m-%d %H:%M:%S")
 
     TrainVariants(epochs=2, bs=8).run()
