@@ -51,7 +51,8 @@ class Trainer(object):
         """
         self.cli = cli
         self.build_args(args)
-        os.makedirs(self.args.log_path, exist_ok=True)
+        if not self.args.terminal_logging:
+            os.makedirs(self.args.log_path, exist_ok=True)
 
 
     def build_args(self, args):
@@ -405,7 +406,6 @@ class Trainer(object):
 
                 loss_temp = 0
                 start = time.time()
-
 
         save_name = os.path.join(self.output_dir,
                                  f'faster_rcnn_{self.args.session}_{epoch}_'+\

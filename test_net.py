@@ -221,6 +221,8 @@ class Tester(object):
         return data_iter
 
     def process_image(self, data_iter, i):
+        empty_array = np.transpose(np.array([[],[],[],[],[]]), (1,0))
+
         data = next(data_iter)
         self.im_data.data.resize_(data[0].size()).copy_(data[0])
         self.im_info.data.resize_(data[1].size()).copy_(data[1])
@@ -326,7 +328,6 @@ class Tester(object):
         data_iter = self.load_data()
 
         self.fasterRCNN.eval()
-        empty_array = np.transpose(np.array([[],[],[],[],[]]), (1,0))
         for i in range(self.num_images):
             self.process_image(data_iter, i)
 
