@@ -89,6 +89,11 @@ class Trainer(object):
             self.args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]',
                                   'ANCHOR_RATIOS', '[0.5,1,2]',
                                   'MAX_NUM_GT_BOXES', '20']
+        elif self.args.dataset == "pascal_pigs":
+            self.args.imdb_name = "voc_2007_trainval"
+            self.args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]',
+                                  'ANCHOR_RATIOS', '[0.5,1,2]',
+                                  'MAX_NUM_GT_BOXES', '20']
         elif self.args.dataset == "pascal_voc_0712":
             self.args.imdb_name = "voc_2007_trainval+voc_2012_trainval"
             self.args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]',
@@ -423,6 +428,8 @@ class Trainer(object):
         logging.info('save model: {}'.format(save_name))
 
     def validate(self, epoch):
+        transfer_required = True if self.args.dataset == "pascal_pigs" \
+                                 else False
         validator = Tester({"dataset": self.args.dataset,
                             "net": self.args.net,
                             "load_dir": self.args.save_dir,
@@ -430,11 +437,15 @@ class Trainer(object):
                             "checksession": self.args.session,
                             "checkepoch": epoch,
                             "checkpoint": self.iters_per_epoch-1,
-                            "validate": True})
+                            "validate": True,
+                            "class_agnostic": self.args.class_agnostic},
+                           transfer_required=transfer_required)
         val_result = validator.test(self.args.ovthresh)
         return val_result
 
     def test(self):
+        transfer_required = True if self.args.dataset == "pascal_pigs" \
+                                 else False
         tester = Tester({"dataset": self.args.dataset,
                          "net": self.args.net,
                          "load_dir": self.args.save_dir,
@@ -442,7 +453,9 @@ class Trainer(object):
                          "checksession": self.args.session,
                          "checkepoch": self.args.max_epochs,
                          "checkpoint": self.iters_per_epoch-1,
-                         "validate": False})
+                         "validate": False,
+                         "class_agnostic": self.args.class_agnostic},
+                        transfer_required=transfer_required)
         test_result = tester.test(self.args.ovthresh)
         return test_result
 

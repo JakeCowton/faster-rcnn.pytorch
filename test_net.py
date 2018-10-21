@@ -47,8 +47,9 @@ class Tester(object):
     Runs the test set of the given dataset on a saved model
     """
 
-    def __init__(self, args, cli=False):
+    def __init__(self, args, cli=False, transfer_required=False):
         self.cli = cli
+        self.transfer_required = transfer_required
         self.build_args(args)
 
     def build_args(self, args):
@@ -62,34 +63,34 @@ class Tester(object):
 
     def set_data_names(self):
         if self.args.dataset == "pascal_voc":
-            self.args.imdb_name = "voc_2007_trainval"
             self.args.imdbval_name = "voc_2007_test"
             self.args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]',
                                   'ANCHOR_RATIOS', '[0.5,1,2]']
         elif self.args.dataset == "pigs_voc":
-            self.args.imdb_name = "pigs_voc_train"
+            self.args.imdbval_name = "pigs_voc_val"
+            self.args.imdbtest_name = "pigs_voc_test"
+            self.args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]',
+                                  'ANCHOR_RATIOS', '[0.5,1,2]',
+                                  'MAX_NUM_GT_BOXES', '20']
+        elif self.args.dataset == "pascal_pigs":
             self.args.imdbval_name = "pigs_voc_val"
             self.args.imdbtest_name = "pigs_voc_test"
             self.args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]',
                                   'ANCHOR_RATIOS', '[0.5,1,2]',
                                   'MAX_NUM_GT_BOXES', '20']
         elif self.args.dataset == "pascal_voc_0712":
-            self.args.imdb_name = "voc_2007_trainval+voc_2012_trainval"
             self.args.imdbval_name = "voc_2007_test"
             self.args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]',
                                   'ANCHOR_RATIOS', '[0.5,1,2]']
         elif self.args.dataset == "coco":
-            self.args.imdb_name = "coco_2014_train+coco_2014_valminusminival"
             self.args.imdbval_name = "coco_2014_minival"
             self.args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]',
                                   'ANCHOR_RATIOS', '[0.5,1,2]']
         elif self.args.dataset == "imagenet":
-            self.args.imdb_name = "imagenet_train"
             self.args.imdbval_name = "imagenet_val"
             self.args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]',
                                   'ANCHOR_RATIOS', '[0.5,1,2]']
         elif self.args.dataset == "vg":
-            self.args.imdb_name = "vg_150-50-50_minitrain"
             self.args.imdbval_name = "vg_150-50-50_minival"
             self.args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]',
                                   'ANCHOR_RATIOS', '[0.5,1,2]']
@@ -130,23 +131,52 @@ class Tester(object):
             raise Exception('There is no input directory for loading '+\
                             'network from ' + input_dir)
 
+    def reconfigure_fc_layer(self):
+        """
+        Reconfigure the FC layers to the new datasets number of classes
+        2048 is the output from the previous layer
+
+        `RCNN_cls_score` is the number of new classes
+        `RCNN_bbox_pred` is the number of new classes * 4 (the number of points
+                         needed to describe a Bounding Box
+        """
+        logging.warning(f"Modifying class labels layer from "+\
+                        f"{self.fasterRCNN.RCNN_cls_score.out_features} "+\
+                        f"to {len(self.imdb.classes)}")
+        self.fasterRCNN.RCNN_cls_score = nn.Linear(2048,
+                                                   len(self.imdb.classes))
+
+        bbox_pred = 4 if self.transfer_required is True \
+                      else self.train_imdb.num_classes*4
+        logging.warning(f"Modifying class bboxes from "+\
+                        f"{self.fasterRCNN.RCNN_bbox_pred.out_features} "+\
+                        f"layer to {bbox_pred}")
+        self.fasterRCNN.RCNN_bbox_pred = nn.Linear(2048, bbox_pred)
+
+        if self.args.cuda:
+            self.fasterRCNN.cuda()
+
     def construct_network(self):
+        if self.transfer_required is True:
+            n_classes = range(21)
+        else:
+            n_classes = self.imdb.classes
         load_name = os.path.join(self.input_dir,
           'faster_rcnn_{}_{}_{}.pth'.format(self.args.checksession,
                                             self.args.checkepoch,
                                             self.args.checkpoint))
         # initilize the network here.
         if self.args.net == 'vgg16':
-            self.fasterRCNN = vgg16(self.imdb.classes, pretrained=False,
+            self.fasterRCNN = vgg16(n_classes, pretrained=False,
                                     class_agnostic=self.args.class_agnostic)
         elif self.args.net == 'res101':
-            self.fasterRCNN = resnet(self.imdb.classes, 101, pretrained=False,
+            self.fasterRCNN = resnet(n_classes, 101, pretrained=False,
                                      class_agnostic=self.args.class_agnostic)
         elif self.args.net == 'res50':
-            self.fasterRCNN = resnet(self.imdb.classes, 50, pretrained=False,
+            self.fasterRCNN = resnet(n_classes, 50, pretrained=False,
                                      class_agnostic=self.args.class_agnostic)
         elif self.args.net == 'res152':
-            self.fasterRCNN = resnet(self.imdb.classes, 152, pretrained=False,
+            self.fasterRCNN = resnet(n_classes, 152, pretrained=False,
                                      class_agnostic=self.args.class_agnostic)
         else:
             logging.error("network is not defined")
@@ -162,6 +192,9 @@ class Tester(object):
 
 
         logging.debug('load model successfully!')
+
+        if self.transfer_required:
+            self.reconfigure_fc_layer()
 
     def initialise_tensor_data(self):
         # initilize the tensor holder here.
