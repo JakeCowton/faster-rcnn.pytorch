@@ -116,7 +116,7 @@ if __name__ == "__main__":
                             # "- %(funcName)s: %(message)s",
                         # datefmt="%Y-%m-%d %H:%M:%S")
 
-    logging.basicConfig(filename=f"./logs/{datetime.now()}_variants.log",
+    logging.basicConfig(filename=f"./logs/{str(datetime.now()).replace(' ', '_')}_variants.log",
                         level=logging.DEBUG,
                         format="%(asctime)s %(levelname)s %(module)s" +
                         "- %(funcName)s: %(message)s",
