@@ -1,6 +1,5 @@
 import logging
 from datetime import datetime
-from multiprocessing import cpu_count
 
 import torch
 
@@ -8,7 +7,7 @@ from trainval_net import Trainer
 
 
 class TrainVariants(object):
-    def __init__(self, epochs, bs, nw=cpu_count(), mGPUs=1):
+    def __init__(self, epochs, bs, nw=6, mGPUs=1):
         self.epochs = epochs
         self.bs = bs
         self.nw = nw
@@ -20,7 +19,7 @@ class TrainVariants(object):
         return dt
 
     def inet_pascal_pigs(self, dt):
-        session = f"{dt}_1"
+        session = f"{dt}1"
         logging.info(f"[{session}] Training on Pascal VOC")
         trained_pascal = Trainer({"dataset": "pascal_voc",
                                   "net": "res101",
@@ -60,7 +59,7 @@ class TrainVariants(object):
         trained_pigs.train()
 
     def inet_pigs(self, dt):
-        session = f"{dt}_2"
+        session = f"{dt}2"
         logging.info(f"[{session}] Training on Pigs VOC")
         trained_pigs = Trainer({"dataset": "pigs_voc",
                                   "net": "res101",
@@ -78,7 +77,7 @@ class TrainVariants(object):
         trained_pigs.train()
 
     def inet_pascal(self, dt):
-        session = f"{dt}_3"
+        session = f"{dt}3"
         logging.info(f"[{session}] Training on Pigs VOC")
         trained_pascal_agnostic = Trainer({"dataset": "pascal_pigs",
                                            "net": "res101",
