@@ -7,7 +7,7 @@ from trainval_net import Trainer
 
 
 class TrainVariants(object):
-    def __init__(self, epochs, bs, nw=6, mGPUs=1):
+    def __init__(self, epochs, bs, nw=1, mGPUs=1):
         self.epochs = epochs
         self.bs = bs
         self.nw = nw
@@ -20,7 +20,7 @@ class TrainVariants(object):
 
     def inet_pascal_pigs(self, dt):
         session = f"{dt}1"
-        logging.info(f"[{session}] Training on Pascal VOC")
+        logging.info(f"[{session}] Training on Pascal VOC with FC reconfigured")
         trained_pascal = Trainer({"dataset": "pascal_voc",
                                   "net": "res101",
                                   "max_epochs": self.epochs,
@@ -48,7 +48,7 @@ class TrainVariants(object):
                                 "resume": True,
                                 "checksession": session,
                                 "checkepoch": self.epochs,
-                                "checkpoint": 10021,
+                                "checkpoint": 1251,
                                 "resume_dataset": "pascal_voc",
                                 "transfer": True,
                                 "resume_classes": 21,
@@ -78,7 +78,7 @@ class TrainVariants(object):
 
     def inet_pascal(self, dt):
         session = f"{dt}3"
-        logging.info(f"[{session}] Training on Pigs VOC")
+        logging.info(f"[{session}] Training on Pascal VOC Class Agnostic")
         trained_pascal_agnostic = Trainer({"dataset": "pascal_pigs",
                                            "net": "res101",
                                            "max_epochs": self.epochs,
